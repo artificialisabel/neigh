@@ -19,12 +19,12 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior: none; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+html, body { width: 100%; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior: none; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 body { background: #1a0a2e; color: #fff; }
 
 /* ── Screens ── */
 .screen {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   z-index: 500; transition: opacity 0.3s;
 }
@@ -115,7 +115,7 @@ body { background: #1a0a2e; color: #fff; }
 
 /* ── Intro Sequence ── */
 .intro-screen {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh;
   display: flex; align-items: center; justify-content: center;
   z-index: 600; background: #000;
 }
@@ -265,12 +265,12 @@ body { background: #1a0a2e; color: #fff; }
 
 /* ── Game Arena ── */
 #game-arena {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh;
   overflow: hidden;
   background-color: #1a0a2e;
 }
 #glitch-bg {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh;
   object-fit: cover; z-index: 0; pointer-events: none;
 }
 #game-arena.hidden { display: none; }
