@@ -1,0 +1,3270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Trojan Horse - CNY Minigame</title>
+<style>
+@font-face {
+  font-family: 'MS Sans Serif';
+  src: url('00_assets/fonts/MS Sans Serif.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'MS Sans Serif';
+  src: url('00_assets/fonts/MS Sans Serif Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overscroll-behavior: none; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+body { background: #1a0a2e; color: #fff; }
+
+/* ── Screens ── */
+.screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 500; transition: opacity 0.3s;
+}
+.screen.hidden { display: none; }
+
+#start-screen { background: url('00_assets/main_bg.png') center/cover no-repeat; background-color: #1a0a2e; }
+#start-screen h1 { font-size: 3rem; margin-bottom: 0.5rem; }
+#start-screen .subtitle { color: #ffd700; font-size: 1.2rem; margin-bottom: 1.5rem; }
+#start-screen .instructions { color: #ccc; font-size: 0.95rem; margin-bottom: 2rem; text-align: center; line-height: 1.6; }
+
+/* ── Outro PNG Sequence Overlay ── */
+#outro-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 700; pointer-events: none;
+}
+#outro-overlay.hidden { display: none; }
+#outro-frame {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+/* ── End Screen (Win2000-style window) ── */
+#end-screen { background: transparent; pointer-events: none; }
+#end-window {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 3px;
+  background: #E3E7F1;
+  box-shadow: inset -1px -1px 0px #0A0A0A, inset 1px 1px 0px #DFDFDF, inset -2px -2px 0px #808080, inset 2px 2px 0px #FFFFFF;
+  font-family: 'MS Sans Serif', 'Tahoma', sans-serif;
+  border: none;
+  min-width: 300px;
+  max-width: 400px;
+}
+#end-window .title-bar {
+  background: #0F1ADD;
+  padding: 3px 2px 3px 3px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 400;
+  font-family: 'MS Sans Serif Bold', 'MS Sans Serif', 'Tahoma', sans-serif;
+}
+#end-window .end-body {
+  padding: 20px 15px 15px;
+  background: #E3E7F1;
+  color: #222222;
+  font-size: 0.9rem;
+  text-align: center;
+}
+#end-message {
+  color: #222222;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  font-family: 'MS Sans Serif', 'Tahoma', sans-serif;
+}
+#end-window .button-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+#end-window .win-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 22px;
+  width: 95px;
+  height: 30px;
+  background: #E3E7F1;
+  box-shadow: inset -1px -1px 0px #0A0A0A, inset 1px 1px 0px #FFFFFF, inset -2px -2px 0px #808080, inset 2px 2px 0px #DFDFDF;
+  border: none;
+  border-radius: 0;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 0.85rem;
+  color: #000000;
+  cursor: pointer;
+  outline: none;
+}
+#end-window .win-btn:hover {
+  filter: brightness(1.05);
+}
+#end-window .win-btn:active {
+  box-shadow: inset 1px 1px 0px #0A0A0A, inset -1px -1px 0px #FFFFFF, inset 2px 2px 0px #808080, inset -2px -2px 0px #DFDFDF;
+}
+
+/* ── Intro Sequence ── */
+.intro-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 600; background: #000;
+}
+.intro-screen.hidden { display: none; }
+.intro-screen video {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.intro-next-btn {
+  position: absolute; bottom: 40px; right: 40px;
+  z-index: 10;
+}
+
+/* ── Grain Overlay (intro screens) ── */
+.grain-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-size: 200px 200px;
+  background-repeat: repeat;
+  animation: grainCycle 0.8s steps(1) infinite;
+}
+@keyframes grainCycle {
+  0%    { background-image: url('00_assets/intro/grain/grain_00000.png'); }
+  10%   { background-image: url('00_assets/intro/grain/grain_00001.png'); }
+  20%   { background-image: url('00_assets/intro/grain/grain_00002.png'); }
+  30%   { background-image: url('00_assets/intro/grain/grain_00003.png'); }
+  40%   { background-image: url('00_assets/intro/grain/grain_00004.png'); }
+  50%   { background-image: url('00_assets/intro/grain/grain_00005.png'); }
+  60%   { background-image: url('00_assets/intro/grain/grain_00006.png'); }
+  70%   { background-image: url('00_assets/intro/grain/grain_00007.png'); }
+  80%   { background-image: url('00_assets/intro/grain/grain_00008.png'); }
+  90%   { background-image: url('00_assets/intro/grain/grain_00009.png'); }
+}
+
+/* ── Loading Screen ── */
+#loading-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+#loading-starburst {
+  width: 25vh;
+  height: 25vh;
+  object-fit: contain;
+  mix-blend-mode: screen;
+}
+#loading-text {
+  color: #fff;
+  font-family: 'MS Sans Serif', 'Courier New', monospace;
+  font-size: 1.6rem;
+  letter-spacing: 0.05em;
+  min-height: 2.4em;
+  text-align: center;
+  white-space: nowrap;
+}
+#loading-text.ready {
+  animation: fadeInText 0.4s ease-in;
+}
+@keyframes fadeInText {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Interactive Popup (Frame 6) - Match game window aesthetic ── */
+#intro-3-container {
+  position: relative; width: 100%; height: 100%;
+}
+#intro-popup {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  padding: 3px;
+  background: #E3E7F1;
+  box-shadow: inset -1px -1px 0px #0A0A0A, inset 1px 1px 0px #DFDFDF, inset -2px -2px 0px #808080, inset 2px 2px 0px #FFFFFF;
+  font-family: 'MS Sans Serif', 'Tahoma', sans-serif;
+  border: none;
+}
+#intro-popup.hidden { display: none; }
+#intro-popup .title-bar {
+  background: #0F1ADD;
+  padding: 3px 2px 3px 3px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 400;
+  font-family: 'MS Sans Serif Bold', 'MS Sans Serif', 'Tahoma', sans-serif;
+}
+#intro-popup .content {
+  padding: 10px;
+  background: #E3E7F1;
+  color: #222222;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#intro-popup .question {
+  font-size: 0.85rem;
+  text-align: center;
+}
+#intro-popup .buttons {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  padding: 0px;
+}
+
+/* ── Windows 2000 Style Buttons (Match game windows) ── */
+.btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 22px;
+  width: 95px;
+  height: 30px;
+  background: #E3E7F1;
+  box-shadow: inset -1px -1px 0px #0A0A0A, inset 1px 1px 0px #FFFFFF, inset -2px -2px 0px #808080, inset 2px 2px 0px #DFDFDF;
+  border: none;
+  border-radius: 0;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 0.85rem;
+  line-height: 12px;
+  text-align: center;
+  color: #000000;
+  cursor: pointer;
+  outline: none;
+}
+.btn:hover {
+  background: #E3E7F1;
+  filter: brightness(1.05);
+}
+.btn:active {
+  box-shadow: inset 1px 1px 0px #0A0A0A, inset -1px -1px 0px #FFFFFF, inset 2px 2px 0px #808080, inset -2px -2px 0px #DFDFDF;
+}
+
+/* ── Game Arena ── */
+#game-arena {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  overflow: hidden;
+  background-color: #1a0a2e;
+}
+#glitch-bg {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover; z-index: 0; pointer-events: none;
+}
+#game-arena.hidden { display: none; }
+
+#horse-container {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  height: 90vh; width: 90vh; /* explicit width keeps translate(-50%) correct after glitchGL replaces content */
+  pointer-events: none; z-index: 50;
+  mix-blend-mode: darken;
+}
+#starburst-video {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  height: 90vh; width: auto; display: block;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 49;
+}
+#horse-video {
+  position: absolute; top: 0; left: 0;
+  height: 100%; width: auto; display: block;
+  object-fit: contain;
+  mix-blend-mode: darken;
+}
+#horse-container canvas {
+  mix-blend-mode: darken !important;
+}
+
+/* ── HUD ── */
+#hud {
+  position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+  background: rgba(0,0,0,0.6); padding: 8px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.9rem;
+}
+#hud span { color: #ffd700; }
+
+/* ── Game Windows (Win2000 style - Figma exact) ── */
+.game-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 3px;
+  background: #E3E7F1;
+  box-shadow: inset -1px -1px 0px #0A0A0A, inset 1px 1px 0px #DFDFDF, inset -2px -2px 0px #808080, inset 2px 2px 0px #FFFFFF;
+  cursor: default;
+  user-select: none;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  border: none;
+  border-radius: 0;
+}
+.game-window .window-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* Title bar */
+.game-window .title-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 2px 3px 3px;
+  width: 100%;
+  height: 20px;
+  background: #0F1ADD;
+  font-family: 'MS Sans Serif Bold', 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 12px;
+  color: #FFFFFF;
+  cursor: default;
+  flex: none;
+  align-self: stretch;
+}
+.game-window .title-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+}
+.game-window .title-buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0px;
+  flex-shrink: 0;
+}
+.game-window .title-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 16px;
+  height: 14px;
+  background: #E3E7F1;
+  box-shadow: inset -1px -1px 0px #0A0A0A, inset 1px 1px 0px #FFFFFF, inset -2px -2px 0px #808080, inset 2px 2px 0px #DFDFDF;
+  border: none;
+  border-radius: 0;
+  font-size: 0.6rem;
+  line-height: 1;
+  color: #000000;
+  padding: 0;
+  margin: 0;
+  cursor: default;
+  outline: none;
+  justify-content: center;
+  align-items: center;
+}
+.game-window .title-btn.close-btn {
+  cursor: pointer;
+}
+.game-window .title-btn.close-btn:hover {
+  background: #E3E7F1;
+  filter: brightness(1.05);
+}
+.game-window .title-btn.close-btn:active {
+  box-shadow: inset 1px 1px 0px #0A0A0A, inset -1px -1px 0px #FFFFFF, inset 2px 2px 0px #808080, inset -2px -2px 0px #DFDFDF;
+}
+
+/* Window body */
+.game-window .window-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 10px;
+  gap: 5px;
+  width: 100%;
+  flex: 1;
+  background: #E3E7F1;
+  color: #222222;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 0.7rem;
+  line-height: 16px;
+}
+
+/* Body content row (icon + text) */
+.game-window .body-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0px;
+  gap: 18px;
+  width: 100%;
+  flex: none;
+}
+.game-window .body-icon {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+.game-window .body-icon img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.game-window .body-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0px;
+  flex: 1;
+  font-size: 0.85rem;
+  line-height: 17px;
+  color: #222222;
+  margin: 0;
+}
+
+/* Win2000 progress bar (timer countdown) */
+.game-window .progress-track {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 3px 3px;
+  gap: 0px;
+  width: 100%;
+  max-width: 75%;
+  height: 22px;
+  background: #FFFFFF;
+  box-shadow: inset -1px -1px 0px #FFFFFF, inset 1px 1px 0px #0A0A0A, inset -2px -2px 0px #DFDFDF, inset 2px 2px 0px #808080;
+  margin-bottom: 0;
+  overflow: hidden;
+  flex: none;
+}
+.game-window .progress-fill {
+  height: 100%;
+  background: #0F1ADD;
+  flex: none;
+}
+
+/* Button row */
+.game-window .button-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  gap: 18px;
+  width: 100%;
+  flex: none;
+  align-self: stretch;
+  margin-top: auto;
+}
+.game-window .win-btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 22px;
+  width: 95px;
+  height: 30px;
+  background: #E3E7F1;
+  box-shadow: inset -1px -1px 0px #0A0A0A, inset 1px 1px 0px #FFFFFF, inset -2px -2px 0px #808080, inset 2px 2px 0px #DFDFDF;
+  border: none;
+  border-radius: 0;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+  font-size: 0.85rem;
+  line-height: 12px;
+  text-align: center;
+  color: #000000;
+  cursor: pointer;
+  outline: none;
+  min-width: auto;
+  min-height: auto;
+}
+.game-window .win-btn:hover {
+  background: #E3E7F1;
+  filter: brightness(1.05);
+}
+.game-window .win-btn:active {
+  box-shadow: inset 1px 1px 0px #0A0A0A, inset -1px -1px 0px #FFFFFF, inset 2px 2px 0px #808080, inset -2px -2px 0px #DFDFDF;
+}
+.game-window .win-btn.nonfunctional {
+  cursor: default;
+}
+.game-window .win-btn.nonfunctional:hover {
+  background: #E3E7F1;
+  filter: none;
+}
+
+/* ── Hover glitch effects ── */
+
+/* RGB split via pseudo-element (doesn't conflict with inset box-shadow) */
+.game-window::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow:
+    3px 3px 0px 0px rgba(0, 255, 255, 0.15),
+    -3px -3px 0px 0px rgba(255, 0, 255, 0.15);
+  transition: box-shadow 0.15s ease;
+}
+.game-window:hover::after {
+  box-shadow:
+    3px 3px 0px 0px rgba(0, 255, 255, 0.45),
+    -3px -3px 0px 0px rgba(255, 0, 255, 0.45);
+}
+
+/* Chromatic aberration on text (cyan + magenta, 3px opposite diagonals) */
+.game-window:hover .body-text {
+  text-shadow:
+    3px 3px 0px rgba(0, 255, 255, 0.4),
+    -3px -3px 0px rgba(255, 0, 255, 0.4);
+}
+
+/* Glitch shake on hover */
+@keyframes glitchShake {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-2px, 1px); }
+  40%  { transform: translate(2px, -1px); }
+  60%  { transform: translate(-1px, -2px); }
+  80%  { transform: translate(1px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+.game-window:hover {
+  animation: glitchShake 0.3s ease-in-out infinite;
+}
+
+/* Don't shake during spawn/close animations */
+.game-window.spawning:hover,
+.game-window.closing:hover {
+  animation-name: none;
+}
+
+/* Expired window flash */
+.game-window.expired {
+  box-shadow: 0 0 20px 8px #ff0000;
+}
+.game-window.expired::after {
+  box-shadow: none;
+}
+.game-window.expired .progress-fill { background: #ff0000; background-image: none; }
+
+/* ── Type 2: Zodiac windows (285x150) ── */
+.game-window.window-type2 {
+  height: auto !important;
+  min-height: 150px;
+  min-width: 285px;
+}
+.game-window.window-type2 .window-body {
+  padding: 12px;
+  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.game-window.window-type2 .body-content {
+  flex-direction: row;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+}
+.game-window.window-type2 .body-icon {
+  width: 44px;
+  height: 44px;
+  margin-left: 0;
+  font-size: 2.75rem;
+  flex-shrink: 0;
+}
+.game-window.window-type2 .body-text {
+  font-size: 1.5rem;
+  line-height: 28px;
+  flex: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.game-window.window-type2 .progress-track {
+  display: none;
+}
+.game-window.window-type2 .button-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 19px;
+  margin-top: auto;
+  gap: 0;
+}
+.game-window.window-type2 .win-btn {
+  width: 100px;
+  height: 32px;
+}
+
+/* ── Type 3: Dummy/distraction windows ── */
+.game-window.window-type3 .title-bar {
+  justify-content: center;
+}
+.game-window.window-type3 .window-body {
+  background: #f0f0f0;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+}
+.game-window.window-type3 .body-text {
+  font-size: 1.5rem;
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 0px;
+}
+.game-window.window-type3 { pointer-events: none; }
+
+/* ── Boss Window ── */
+.game-window.boss-window {
+  border-color: #ff4444;
+}
+.game-window.boss-window::after {
+  box-shadow:
+    4px 4px 0px 0px rgba(0, 255, 255, 0.35),
+    -4px -4px 0px 0px rgba(255, 0, 255, 0.35);
+}
+.game-window.boss-window:hover::after {
+  box-shadow:
+    5px 5px 0px 0px rgba(0, 255, 255, 0.6),
+    -5px -5px 0px 0px rgba(255, 0, 255, 0.6);
+}
+.game-window.boss-window:hover .body-text {
+  text-shadow:
+    4px 4px 0px rgba(0, 255, 255, 0.5),
+    -4px -4px 0px rgba(255, 0, 255, 0.5);
+}
+.game-window.boss-window:hover {
+  animation: glitchShake 0.15s ease-in-out infinite;
+}
+.game-window.boss-window .title-bar {
+  background: linear-gradient(180deg, #5c0000 0%, #8B0000 100%);
+}
+
+/* ── Scanlines (DISABLED) ── */
+#scanlines {
+  display: none !important;
+}
+
+/* ── Animations ── */
+@keyframes windowSpawnIn {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes windowGlitchOut {
+  0%   { transform: scale(1); opacity: 1; }
+  30%  { transform: translate(4px, -2px) scaleX(1.05); opacity: 0.8; }
+  60%  { transform: translate(-6px, 3px) scaleY(0.9); opacity: 0.4; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.game-window.spawning { animation: windowSpawnIn 0.25s ease-out forwards; }
+.game-window.closing { animation: windowGlitchOut 0.15s ease-in forwards; pointer-events: none; }
+
+@keyframes bossHit {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(0.92) rotate(-2deg); }
+  50%  { transform: scale(1.05) rotate(1deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.game-window.boss-hit { animation: bossHit 0.2s ease-out; }
+
+/* ── Dev Toolbar ── */
+#dev-toolbar {
+  position: fixed; bottom: 10px; right: 10px; z-index: 9999;
+}
+#dev-toggle {
+  padding: 6px 12px; font-size: 0.8rem; cursor: pointer;
+  background: rgba(40,40,40,0.85); color: #ffd700; border: 1px solid #555;
+  border-radius: 4px; float: right;
+}
+#dev-panel {
+  background: rgba(20,20,20,0.92); border: 1px solid #444; border-radius: 6px;
+  padding: 10px 12px; margin-bottom: 6px; width: 280px;
+  max-height: 85vh; overflow-y: auto; font-size: 0.75rem; color: #ccc;
+}
+#dev-panel.hidden { display: none; }
+.dev-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px;
+}
+.dev-row label { flex: 1; margin-right: 6px; }
+.dev-row input[type="range"] { width: 90px; }
+.dev-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+.dev-row .val { width: 36px; text-align: right; color: #ffd700; font-family: monospace; }
+.dev-btn {
+  padding: 4px 10px; font-size: 0.75rem; cursor: pointer;
+  background: #333; color: #ffd700; border: 1px solid #666; border-radius: 3px;
+  margin: 2px;
+}
+.dev-btn:hover { background: #555; }
+.dev-section { color: #ffd700; font-weight: bold; margin: 8px 0 4px; font-size: 0.8rem; border-bottom: 1px solid #444; padding-bottom: 2px; }
+.dev-subsection { color: #aaa; font-weight: bold; margin: 6px 0 3px; font-size: 0.72rem; border-bottom: 1px solid #333; padding-bottom: 1px; }
+.dev-row select { background: #333; color: #ccc; border: 1px solid #555; border-radius: 3px; font-size: 0.7rem; padding: 2px 4px; cursor: pointer; }
+.dev-row input[type="text"] { background: #333; color: #ccc; border: 1px solid #555; border-radius: 3px; font-size: 0.7rem; padding: 2px 4px; width: 60px; }
+
+/* ── Production: hide dev toolbar and HUD ── */
+#dev-toolbar { display: none !important; }
+#hud { display: none !important; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .game-window .title-btn { width: 20px; height: 18px; font-size: 0.85rem; }
+  .game-window .title-bar { height: 24px; font-size: 0.85rem; }
+  .game-window .window-body { font-size: 0.85rem; padding: 8px 10px; }
+  .game-window .win-btn { min-height: 28px; min-width: 80px; font-size: 0.9rem; }
+  #start-screen h1 { font-size: 2rem; }
+  #dev-panel { width: 240px; font-size: 0.7rem; }
+  /* Intro video: show left side for portrait crop */
+  .intro-screen video { object-position: 47% center; }
+  /* Scaled window internals */
+  .game-window .body-icon { width: 50px; height: 50px; }
+  .game-window .body-content { gap: 10px; }
+}
+@media (max-width: 480px) {
+  .game-window .title-btn { width: 26px; height: 22px; font-size: 1rem; }
+  .game-window .title-bar { height: 28px; font-size: 0.9rem; }
+  .game-window .win-btn { min-height: 36px; min-width: 100px; font-size: 1rem; }
+  #start-screen h1 { font-size: 1.6rem; }
+  /* Smaller horse on tiny screens */
+  #horse-container { height: 75vh; width: 75vh; }
+  #starburst-video { height: 75vh; }
+  /* Window internals for small screens */
+  .game-window .body-icon { width: 40px; height: 40px; }
+  .game-window .body-text { font-size: 0.75rem; line-height: 14px; }
+  .game-window .window-body { padding: 6px 8px; gap: 4px; }
+  .game-window.window-type2 .body-icon { width: 36px; height: 36px; font-size: 2rem; }
+  .game-window.window-type2 .body-text { font-size: 1.1rem; line-height: 20px; }
+  /* Popups that might overflow narrow screens */
+  #intro-popup { width: 90vw; max-width: 300px; }
+  #end-window { min-width: auto; max-width: 90vw; width: 90vw; }
+  /* Text overflow prevention */
+  #trojan-msg { font-size: 1.2rem; white-space: normal; max-width: 90vw; }
+  #loading-text { font-size: 1.2rem; max-width: 90vw; }
+}
+
+/* ── Starburst hidden during idle preview ── */
+#starburst-video.preview-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* ── Pointer cursor when hovering horse ── */
+#game-arena.horse-hover {
+  cursor: pointer;
+}
+
+/* ── Trojan Horse reveal message ── */
+#trojan-msg {
+  position: fixed;
+  bottom: 8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9000;
+  color: #fff;
+  font-family: 'MS Sans Serif', 'Courier New', monospace;
+  font-size: 1.8rem;
+  letter-spacing: 0.05em;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  text-shadow:
+    2px 2px 0px rgba(0, 255, 255, 0.5),
+    -2px -2px 0px rgba(255, 0, 255, 0.5),
+    0 0 20px rgba(255, 0, 0, 0.4);
+}
+#trojan-msg.visible {
+  opacity: 1;
+}
+
+/* ── Loading screen pointer when ready ── */
+#intro-1.click-ready {
+  cursor: pointer;
+}
+
+</style>
+</head>
+<body>
+
+<!-- Intro Sequence -->
+<!-- Intro 1: Loading screen (click anywhere to advance) -->
+<div id="intro-1" class="intro-screen" style="background: #291A63;">
+  <div id="loading-wrapper">
+    <video id="loading-starburst" autoplay loop muted playsinline>
+      <source src="00_assets/horsemp4/starburst_rear.mp4" type="video/mp4">
+    </video>
+    <div id="loading-text"></div>
+  </div>
+</div>
+<script>
+// Early inline typewriter — starts immediately before the rest of the page parses
+(function() {
+  var phrases = ['loading\u2026', 'horsin\u2019 around\u2026', 'building a chinese wall??', 'praying for prosperity~'];
+  var el = document.getElementById('loading-text');
+  var pi = 0, ci = 0, tid = null;
+  function typeNext() {
+    if (ci < phrases[pi].length) {
+      el.textContent = phrases[pi].substring(0, ci + 1);
+      ci++;
+      tid = setTimeout(typeNext, 60);
+    } else {
+      tid = setTimeout(function() {
+        pi++;
+        if (pi >= phrases.length) pi = 0;
+        ci = 0;
+        el.textContent = '';
+        typeNext();
+      }, 700);
+    }
+  }
+  typeNext();
+  window.__earlyTypewriter = { stop: function() { clearTimeout(tid); } };
+})();
+</script>
+
+<!-- Intro 2: Dialogue (plays with audio, auto-advances on end) -->
+<div id="intro-2" class="intro-screen hidden">
+  <video id="intro-2-video" playsinline>
+    <source src="00_assets/intro/intro_2.mp4" type="video/mp4">
+  </video>
+  <div class="grain-overlay"></div>
+</div>
+
+<!-- Intro 3: Background loop + interactive popup -->
+<div id="intro-3" class="intro-screen hidden">
+  <div id="intro-3-container">
+    <video id="intro-3-video" autoplay loop muted playsinline>
+      <source src="00_assets/intro/intro_3.mp4" type="video/mp4">
+    </video>
+    <div class="grain-overlay"></div>
+
+    <!-- Interactive Popup -->
+    <div id="intro-popup" class="hidden">
+      <div class="title-bar">
+        <span>Hark!</span>
+      </div>
+      <div class="content">
+        <div class="question">Do you let in the horse?</div>
+        <div class="buttons">
+          <button class="btn" id="choice-yay">Yay</button>
+          <button class="btn" id="choice-neigh">Neigh</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Intro 4: Horse entering wall (plays once, crossfades to idle preview) -->
+<div id="intro-4" class="intro-screen hidden">
+  <video id="intro-4-video" playsinline>
+    <source src="00_assets/intro/INTRO_4.mp4" type="video/mp4">
+  </video>
+  <div class="grain-overlay"></div>
+</div>
+
+<!-- Start Screen -->
+<div id="start-screen" class="screen hidden">
+  <h1>TROJAN HORSE</h1>
+  <div class="subtitle">Chinese New Year Edition</div>
+  <div class="instructions">
+    Close all the pop-up windows before they expire!<br>
+    Click the <strong>X</strong> button or <strong>Cancel</strong> / <strong>Close</strong> to dismiss each window.
+  </div>
+  <button class="btn" id="start-btn">START GAME</button>
+</div>
+
+<!-- Game Arena -->
+<div id="game-arena" class="hidden">
+  <video id="glitch-bg" autoplay loop muted playsinline>
+    <source src="00_assets/bg.mp4" type="video/mp4">
+  </video>
+  <video id="starburst-video" autoplay loop muted playsinline src="00_assets/horsemp4/starburst_idle.mp4"></video>
+  <div id="horse-container">
+    <video id="horse-video" autoplay loop muted playsinline src="00_assets/horsemp4/horse_idle.mp4"></video>
+  </div>
+  <div id="hud">
+    <span id="hud-stage">Stage: 1</span>
+    <span id="hud-remaining">Windows: 0</span>
+    <span id="hud-boss" style="display:none">Boss: 8 HP</span>
+    <span id="hud-status"></span>
+  </div>
+</div>
+
+<!-- Outro PNG Sequence Overlay -->
+<div id="outro-overlay" class="hidden">
+  <img id="outro-frame" src="" alt="">
+</div>
+
+<!-- End Screen (Win2000-style window) -->
+<div id="end-screen" class="screen hidden">
+  <div id="end-window">
+    <div class="title-bar">
+      <span id="end-title"></span>
+    </div>
+    <div class="end-body">
+      <p id="end-message"></p>
+      <div class="button-row">
+        <button class="win-btn" id="restart-btn">Restart</button>
+        <button class="win-btn" id="home-btn">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scanlines Overlay -->
+<div id="scanlines"></div>
+
+<!-- Trojan Horse reveal message -->
+<div id="trojan-msg">我操 it's a trojan horse!!!</div>
+
+<!-- Dev Toolbar -->
+<div id="dev-toolbar">
+  <div id="dev-panel" class="hidden"></div>
+  <button id="dev-toggle">DEV</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="scripts/glitchGL.min.js"></script>
+<script>
+// =================================================
+// CONFIG (simplified — cosmetic effects removed)
+// =================================================
+var CONFIG = {
+  showTimerBars: true,
+  showScanlines: true,
+
+  messages: [
+    { title: 'System Error', body: 'ERROR: VIRUS DETECTED IN SYSTEM32', type: 'error' },
+    { title: 'Warning!', body: 'YOUR COMPUTER HAS BEEN COMPROMISED', type: 'warning' },
+    { title: 'Alert', body: 'YOU ARE AN IDIOT! HA HA HA HA HA', type: 'error' },
+    { title: 'Trojan.Win32', body: 'SENDING YOUR PASSWORDS TO HACKERS...', type: 'error' },
+    { title: 'FBI Warning', body: 'ILLEGAL ACTIVITY DETECTED ON THIS PC', type: 'warning' },
+    { title: 'System32', body: 'DELETING ALL FILES... PLEASE WAIT', type: 'system' },
+    { title: 'Congratulations!', body: 'YOU ARE THE 1,000,000th VISITOR!', type: 'warning' },
+    { title: 'Critical Update', body: 'DOWNLOAD NOW: totallynotavirus.exe', type: 'system' },
+    { title: 'HORSE.EXE', body: 'NEIGH NEIGH YOUR FILES ARE MINE', type: 'error' },
+    { title: 'Happy New Year!', body: 'YOUR LUCK HAS RUN OUT!', type: 'error' },
+    { title: 'Firewall Breach', body: 'PORT 8080 EXPOSED TO THE INTERNET', type: 'system' },
+    { title: 'Antivirus Failed', body: 'NORTON HAS GIVEN UP. GOOD LUCK.', type: 'warning' },
+    { title: 'RAM Alert', body: 'YOU NEED TO DOWNLOAD MORE RAM', type: 'system' },
+    { title: 'Crypto Miner', body: 'MINING DOGECOIN... CPU AT 100%', type: 'error' },
+    { title: 'Identity Theft', body: 'YOUR SOCIAL SECURITY NUMBER IS...', type: 'error' },
+    { title: 'Spyware Found', body: '47 TRACKING COOKIES INSTALLED', type: 'warning' },
+  ],
+};
+
+// =================================================
+// ZODIAC MESSAGES (Stage 2 - 12 animals, horse is LAST)
+// =================================================
+var ZODIAC_MESSAGES = [
+  { animal: 'Rat',     emoji: '\uD83D\uDC00', title: 'rat.exe',     body: 'GNAWING THROUGH YOUR ETHERNET CABLE...' },
+  { animal: 'Ox',      emoji: '\uD83D\uDC02', title: 'ox.exe',      body: 'BULLDOZING YOUR FIREWALL... PLEASE WAIT' },
+  { animal: 'Tiger',   emoji: '\uD83D\uDC05', title: 'tiger.exe',   body: 'RaWR!! SHREDDING YOUR DOCUMENTS FOLDER' },
+  { animal: 'Rabbit',  emoji: '\uD83D\uDC07', title: 'rabbit.exe',  body: 'MULTIPLYING PROCESSES... 2... 4... 8... 16...' },
+  { animal: 'Dragon',  emoji: '\uD83D\uDC09', title: 'dragon.exe',  body: 'BREATHING FIRE INTO YOUR CPU CORES' },
+  { animal: 'Snake',   emoji: '\uD83D\uDC0D', title: 'snake.exe',   body: 'SSSSLITHERING THROUGH YOUR REGISTRY...' },
+  { animal: 'Goat',    emoji: '\uD83D\uDC10', title: 'goat.exe',    body: 'EATING ALL YOUR RAM... STILL HUNGRY' },
+  { animal: 'Monkey',  emoji: '\uD83D\uDC12', title: 'monkey.exe',  body: 'RANDOMLY PRESSING KEYS... asdjkfl;' },
+  { animal: 'Rooster', emoji: '\uD83D\uDC13', title: 'rooster.exe', body: 'COCK-A-DOODLE-CRASH! WAKE UP CALL AT 4AM' },
+  { animal: 'Dog',     emoji: '\uD83D\uDC15', title: 'dog.exe',     body: 'FETCHING YOUR PASSWORDS... GOOD BOY!' },
+  { animal: 'Pig',     emoji: '\uD83D\uDC16', title: 'pig.exe',     body: 'HOGGING 100% OF YOUR DISK SPACE' },
+  { animal: 'Horse',   emoji: '\uD83D\uDC34', title: 'HORSE.EXE',   body: 'HORSENESS IS THE WHATNESS OF ALLHORSE' },
+];
+
+// =================================================
+// BOSS MESSAGES (one per click, 8 total)
+// =================================================
+var BOSS_MESSAGES = [
+  'You think you can catch me?!',
+  'Too slow, human!',
+  'I AM the Year of the Horse!',
+  'You GidDy UP!',
+  'Getting tired yet?',
+  'NeIGhh!',
+  'Almost... NOT! NEIGH NEIGH!',
+  'NEIGH NEIGH NEI-- ',
+];
+
+// =================================================
+// DUMMY WINDOW MESSAGES (Stage 3 distractions)
+// =================================================
+var DUMMY_MESSAGES = [
+  { title: 'horsejoke.dll',  body: 'Why the long face?' },
+  { title: 'stable.sys',     body: 'This system is un-STABLE' },
+  { title: 'hay.exe',        body: 'HAY there! You look busy!' },
+  { title: 'gallop.bat',     body: 'Hold your horses!' },
+  { title: 'mane.dll',       body: 'The MANE problem is YOU' },
+  { title: 'saddle.sys',     body: 'Saddled with too many popups?' },
+  { title: 'hoof.exe',       body: 'You don\'t have a leg to stand on!' },
+  { title: 'neigh.dll',      body: 'Neigh means neigh!' },
+  { title: 'colt.sys',       body: 'ERROR: Too COLT to handle' },
+  { title: 'pony.exe',       body: 'Just horsing around!' },
+];
+
+// =================================================
+// STAGE CONFIGURATION
+// =================================================
+var STAGE_CONFIG = {
+  stage1: {
+    windowCount: 12,
+    closedToAdvance: 8,
+    timeLimit: 12,
+    windowWidth: 400,
+    windowHeight: 220,
+    // Floating movement
+    floatSpeed: 0.1,
+    floatRadius: 50,
+  },
+  stage2: {
+    spawnStagger: 100,
+    timeLimit: 12,
+    windowWidth: 410,
+    windowHeight: 220,
+    diagonalSpacing: 75,
+    diagonalPivotSpeed: 0.88,
+    // Dummy windows (slower ramp — stage 3 goes faster)
+    dummySpawnInterval: 1000,
+    dummyMaxOnScreen: 12,
+  },
+  stage3: {
+    bossMaxHP: 8,
+    bossSpeed: 15.0,
+    bossRepulsionRadius: 400,
+    dummySpawnInterval: 500,
+    dummyMaxOnScreen: 24,
+    dummyMinWidth: 180,
+    dummyMaxWidth: 300,
+    dummyMinHeight: 100,
+    dummyMaxHeight: 200,
+  },
+};
+
+// =================================================
+// MOBILE SCALING
+// =================================================
+function applyMobileScaling() {
+  var vw = window.innerWidth;
+  if (vw >= 768) return;
+  var scale = vw / 500;
+  // Stage 1
+  STAGE_CONFIG.stage1.windowWidth = Math.round(400 * scale);
+  STAGE_CONFIG.stage1.windowHeight = Math.round(220 * scale);
+  STAGE_CONFIG.stage1.floatRadius = Math.round(50 * scale);
+  // Stage 2
+  STAGE_CONFIG.stage2.windowWidth = Math.round(410 * scale);
+  STAGE_CONFIG.stage2.windowHeight = Math.round(220 * scale);
+  STAGE_CONFIG.stage2.diagonalSpacing = Math.round(75 * scale);
+  STAGE_CONFIG.stage2.dummyMaxOnScreen = 8;
+  // Stage 3
+  STAGE_CONFIG.stage3.bossRepulsionRadius = Math.round(400 * scale);
+  STAGE_CONFIG.stage3.dummyMinWidth = Math.round(180 * scale);
+  STAGE_CONFIG.stage3.dummyMaxWidth = Math.round(300 * scale);
+  STAGE_CONFIG.stage3.dummyMinHeight = Math.round(100 * scale);
+  STAGE_CONFIG.stage3.dummyMaxHeight = Math.round(200 * scale);
+  STAGE_CONFIG.stage3.dummyMaxOnScreen = 16;
+}
+applyMobileScaling();
+
+// =================================================
+// GLITCH_CONFIG (glitchGL effect parameters)
+// =================================================
+var GLITCH_CONFIG = {
+  // Layer-specific intensities
+  layers: {
+    background: 5.0,
+    horse: 2.5,
+    windows: 1.0
+  },
+  intensity: 1.0, // Global base intensity (will be multiplied per layer)
+  interaction: {
+    enabled: true,
+    shape: 'custom',
+    customSize: '15vh',
+    customUrl: '00_assets/horse_head.svg',
+    velocity: true,
+    effects: {
+      pixelation: ['pixelSize'],
+      crt: ['chromaticAberration', 'scanlines', 'phosphorGlow', 'curvature'],
+      glitch: ['rgbShift', 'lineDisplacement', 'bitCrushing', 'signalDropout', 'syncErrors', 'interferenceLines', 'frameGhosting', 'stutterFreeze', 'datamoshing']
+    }
+  },
+  pixelation: {
+    enabled: false, pixelSize: 1, pixelShape: 'square',
+    bitDepth: 'none', dithering: 'none', pixelDirection: 'square'
+  },
+  crt: {
+    enabled: true, preset: 'computer-monitor',
+    scanlineIntensity: 0.0, scanlineThickness: 0.8, scanlineCount: 240,
+    brightness: 1.2, phosphorGlow: 0.18, curvature: 4.4,
+    chromaticAberration: 0.005, flicker: true, flickerIntensity: 0.01,
+    lineMovement: false, lineSpeed: 1.0, lineDirection: 'up'
+  },
+  glitch: {
+    enabled: true, rgbShift: 0.0006, digitalNoise: 0.22,
+    lineDisplacement: 0, bitCrushDepth: 0,
+    signalDropoutFreq: 0.003, signalDropoutSize: 0.27,
+    syncErrorFreq: 0.003, syncErrorAmount: 0.001,
+    interferenceSpeed: 0, interferenceIntensity: 0,
+    frameGhostAmount: 0.01, stutterFreq: 0.01, datamoshStrength: 2.0
+  }
+};
+
+var glitchEffects = {
+  background: null,
+  horse: null
+};
+
+function createGlitchConfig(layerIntensity) {
+  return {
+    intensity: layerIntensity,
+    interaction: {
+      enabled: GLITCH_CONFIG.interaction.enabled,
+      shape: GLITCH_CONFIG.interaction.shape,
+      customSize: GLITCH_CONFIG.interaction.customSize,
+      customUrl: GLITCH_CONFIG.interaction.customUrl || null,
+      velocity: GLITCH_CONFIG.interaction.velocity,
+      effects: {
+        pixelation: GLITCH_CONFIG.interaction.effects.pixelation.slice(),
+        crt: GLITCH_CONFIG.interaction.effects.crt.slice(),
+        glitch: GLITCH_CONFIG.interaction.effects.glitch.slice()
+      }
+    },
+    effects: {
+      pixelation: {
+        enabled: GLITCH_CONFIG.pixelation.enabled,
+        pixelSize: GLITCH_CONFIG.pixelation.pixelSize,
+        pixelShape: GLITCH_CONFIG.pixelation.pixelShape,
+        bitDepth: GLITCH_CONFIG.pixelation.bitDepth,
+        dithering: GLITCH_CONFIG.pixelation.dithering,
+        pixelDirection: GLITCH_CONFIG.pixelation.pixelDirection
+      },
+      crt: {
+        enabled: GLITCH_CONFIG.crt.enabled,
+        preset: GLITCH_CONFIG.crt.preset,
+        scanlineIntensity: GLITCH_CONFIG.crt.scanlineIntensity,
+        scanlineThickness: GLITCH_CONFIG.crt.scanlineThickness,
+        scanlineCount: GLITCH_CONFIG.crt.scanlineCount,
+        brightness: GLITCH_CONFIG.crt.brightness,
+        phosphorGlow: GLITCH_CONFIG.crt.phosphorGlow,
+        curvature: GLITCH_CONFIG.crt.curvature,
+        chromaticAberration: GLITCH_CONFIG.crt.chromaticAberration,
+        flicker: GLITCH_CONFIG.crt.flicker,
+        flickerIntensity: GLITCH_CONFIG.crt.flickerIntensity,
+        lineMovement: GLITCH_CONFIG.crt.lineMovement,
+        lineSpeed: GLITCH_CONFIG.crt.lineSpeed,
+        lineDirection: GLITCH_CONFIG.crt.lineDirection
+      },
+      glitch: {
+        enabled: GLITCH_CONFIG.glitch.enabled,
+        rgbShift: GLITCH_CONFIG.glitch.rgbShift,
+        digitalNoise: GLITCH_CONFIG.glitch.digitalNoise,
+        lineDisplacement: GLITCH_CONFIG.glitch.lineDisplacement,
+        bitCrushDepth: GLITCH_CONFIG.glitch.bitCrushDepth,
+        signalDropoutFreq: GLITCH_CONFIG.glitch.signalDropoutFreq,
+        signalDropoutSize: GLITCH_CONFIG.glitch.signalDropoutSize,
+        syncErrorFreq: GLITCH_CONFIG.glitch.syncErrorFreq,
+        syncErrorAmount: GLITCH_CONFIG.glitch.syncErrorAmount,
+        interferenceSpeed: GLITCH_CONFIG.glitch.interferenceSpeed,
+        interferenceIntensity: GLITCH_CONFIG.glitch.interferenceIntensity,
+        frameGhostAmount: GLITCH_CONFIG.glitch.frameGhostAmount,
+        stutterFreq: GLITCH_CONFIG.glitch.stutterFreq,
+        datamoshStrength: GLITCH_CONFIG.glitch.datamoshStrength
+      }
+    }
+  };
+}
+
+function initGlitchGL() {
+  if (typeof glitchGL === 'undefined') { console.error('glitchGL library not loaded'); return; }
+  if (glitchEffects.background) return; // Already initialized
+
+  // Workaround: glitchGL uses IntersectionObserver to set an internal "inView"
+  // flag. If the IO callback never fires (or fires late), inView stays false
+  // and the animation loop skips all rendering — including mouse interaction
+  // updates. We temporarily hide IO so glitchGL falls back to inView=true.
+  var _IO = window.IntersectionObserver;
+  delete window.IntersectionObserver;
+
+  // Initialize background layer (video)
+  var bgConfig = createGlitchConfig(GLITCH_CONFIG.layers.background);
+  bgConfig.on = {
+    init: function(instance) {
+      // glitchGL hides the target element — restore the video so it remains visible
+      setTimeout(function() {
+        var bg = document.getElementById('glitch-bg');
+        if (bg) bg.style.visibility = 'visible';
+      }, 50);
+    }
+  };
+  glitchEffects.background = glitchGL(Object.assign({ target: '#glitch-bg' }, bgConfig));
+
+  // Initialize horse layer — target the horse VIDEO directly.
+  // glitchGL detects <video> tagName and creates THREE.VideoTexture which
+  // auto-updates every frame. The horse video uses mix-blend-mode: darken
+  // (white bg = transparent). We set the same blend mode on glitchGL's canvas.
+  var horseConfig = createGlitchConfig(GLITCH_CONFIG.layers.horse);
+  horseConfig.on = {
+    init: function(instance) {
+      if (instance.canvas) {
+        instance.canvas.style.pointerEvents = 'none';
+        instance.canvas.style.mixBlendMode = 'darken';
+      }
+      setTimeout(function() {
+        var video = document.getElementById('horse-video');
+        if (video) video.style.visibility = 'visible';
+      }, 50);
+    }
+  };
+  glitchEffects.horse = glitchGL(Object.assign({ target: '#horse-video' }, horseConfig));
+
+  // Restore IntersectionObserver for the rest of the page
+  window.IntersectionObserver = _IO;
+
+  // Workaround: glitchGL's animation loop stops when no time-based effects
+  // (flicker, noise, etc.) are active. When it stops, mousePx uniform freezes
+  // because handleInteraction sets needsRender but doesn't restart the loop.
+  // We fix this by nudging updateOptions on every mousemove, which internally
+  // calls triggerRenderAll() and restarts the loop for that frame.
+  // ALSO: Manually update mouse uniforms since glitchGL's internal tracking is broken
+  document.addEventListener('mousemove', function(e) {
+    if (!GLITCH_CONFIG.interaction.enabled) return;
+    // Nudge all glitchGL effects so their render loops stay active for mouse interaction
+    var allEffects = [glitchEffects.background, glitchEffects.horse];
+    allEffects.forEach(function(effect) {
+      if (!effect) return;
+      effect.updateOptions({});
+    });
+  });
+  // Touch equivalent for mobile glitchGL interaction
+  document.addEventListener('touchmove', function(e) {
+    if (!GLITCH_CONFIG.interaction.enabled) return;
+    [glitchEffects.background, glitchEffects.horse].forEach(function(effect) {
+      if (effect) effect.updateOptions({});
+    });
+  }, { passive: true });
+}
+
+// =================================================
+// STATE
+// =================================================
+var state = {
+  phase: 'idle',
+  nextWindowId: 0,
+  activeWindows: [],
+  spawnTimerIds: [],
+  animFrameId: null,
+
+  // Stage system
+  currentStage: 0,
+  stage1ClosedCount: 0,
+  stage2Active: false,
+  stage3Active: false,
+
+  // Boss
+  bossWindow: null,
+  bossClickCount: 0,
+  bossActive: false,
+
+  // Stage 2 spawning
+  zodiacSpawnIndex: 0,
+  zodiacWindows: [],
+  diagonalAngle: Math.PI / 4,
+  diagonalAngleStart: 0,
+
+  // Stage 3
+  dummySpawnTimerId: null,
+  pixelGlitchTimerId: null,
+};
+
+// =================================================
+// DOM REFS
+// =================================================
+// Intro elements
+var $intro1 = document.getElementById('intro-1');
+var $intro2 = document.getElementById('intro-2');
+var $intro3 = document.getElementById('intro-3');
+var $loadingStarburst = document.getElementById('loading-starburst');
+var $loadingText = document.getElementById('loading-text');
+var $intro2Video = document.getElementById('intro-2-video');
+var $intro3Video = document.getElementById('intro-3-video');
+var $introPopup = document.getElementById('intro-popup');
+var $choiceYay = document.getElementById('choice-yay');
+var $choiceNeigh = document.getElementById('choice-neigh');
+var $intro4 = document.getElementById('intro-4');
+var $intro4Video = document.getElementById('intro-4-video');
+var $startScreen = document.getElementById('start-screen');
+var $gameArena = document.getElementById('game-arena');
+var $endScreen = document.getElementById('end-screen');
+var $endTitle = document.getElementById('end-title');
+var $endMessage = document.getElementById('end-message');
+var $hudStage = document.getElementById('hud-stage');
+var $hudRemaining = document.getElementById('hud-remaining');
+var $hudBoss = document.getElementById('hud-boss');
+var $hudStatus = document.getElementById('hud-status');
+var $startBtn = document.getElementById('start-btn');
+var $restartBtn = document.getElementById('restart-btn');
+var $homeBtn = document.getElementById('home-btn');
+
+// Mouse tracking
+var lastMouseX = -9999;
+var lastMouseY = -9999;
+
+// Horse animation state (video-based)
+var horseAnimMode = 'idle';
+
+// Audio pools (multiple instances for overlapping playback)
+var audioErrorPool = [];
+var audioAlertPool = [];
+var AUDIO_POOL_SIZE = 6;
+for (var ai = 0; ai < AUDIO_POOL_SIZE; ai++) {
+  var errAudio = new Audio('00_assets/audio/error.mp3');
+  errAudio.volume = 0.5;
+  audioErrorPool.push(errAudio);
+  var alertAudio = new Audio('00_assets/audio/alert.mp3');
+  alertAudio.volume = 0.5;
+  audioAlertPool.push(alertAudio);
+}
+var audioErrorIndex = 0;
+var audioAlertIndex = 0;
+
+function playErrorSound() {
+  var a = audioErrorPool[audioErrorIndex];
+  a.currentTime = 0;
+  a.play().catch(function() {});
+  audioErrorIndex = (audioErrorIndex + 1) % AUDIO_POOL_SIZE;
+}
+
+function playAlertSound() {
+  var a = audioAlertPool[audioAlertIndex];
+  a.currentTime = 0;
+  a.play().catch(function() {});
+  audioAlertIndex = (audioAlertIndex + 1) % AUDIO_POOL_SIZE;
+}
+
+// Music & SFX
+var audioWind = new Audio('00_assets/audio/wind.mp3');
+audioWind.loop = true;
+audioWind.volume = 0.4;
+
+var audioBgMusic = new Audio('00_assets/audio/bgmusic.mp3');
+audioBgMusic.loop = true;
+audioBgMusic.volume = 0.5;
+
+var audioVictory = new Audio('00_assets/audio/victory.mp3');
+audioVictory.volume = 0.6;
+
+var audioNeigh = new Audio('00_assets/audio/neigh.mp3');
+audioNeigh.volume = 0.6;
+
+function playNeighSound() {
+  audioNeigh.currentTime = 0;
+  audioNeigh.play().catch(function() {});
+}
+
+function startWindAmbience() {
+  audioWind.currentTime = 0;
+  audioWind.play().catch(function() {});
+}
+
+function stopWindAmbience() {
+  audioWind.pause();
+  audioWind.currentTime = 0;
+}
+
+function startBgMusic() {
+  audioBgMusic.currentTime = 0;
+  audioBgMusic.play().catch(function() {});
+}
+
+function stopBgMusic() {
+  audioBgMusic.pause();
+  audioBgMusic.currentTime = 0;
+}
+
+function stopAllAudio() {
+  stopWindAmbience();
+  stopBgMusic();
+  audioVictory.pause();
+  audioVictory.currentTime = 0;
+}
+
+// =================================================
+// LOADING SCREEN TYPEWRITER
+// =================================================
+var LOADING_PHRASES = [
+  'loading\u2026',
+  'horsin\u2019 around\u2026',
+  'building a chinese wall??',
+  'praying for prosperity~',
+];
+var loadingTypewriterTimerId = null;
+var loadingPhraseIndex = 0;
+
+function startLoadingTypewriter() {
+  // Stop early inline typewriter if still running
+  if (window.__earlyTypewriter) {
+    window.__earlyTypewriter.stop();
+    window.__earlyTypewriter = null;
+  }
+  stopLoadingTypewriter();
+  $loadingText.classList.remove('ready');
+  $intro1.classList.remove('click-ready');
+  loadingPhraseIndex = 0;
+  typePhrase(LOADING_PHRASES[0]);
+}
+
+function stopLoadingTypewriter() {
+  if (loadingTypewriterTimerId) {
+    clearTimeout(loadingTypewriterTimerId);
+    loadingTypewriterTimerId = null;
+  }
+  if ($loadingText) $loadingText.textContent = '';
+}
+
+function typePhrase(phrase) {
+  if (!$loadingText) return;
+  var charIndex = 0;
+  $loadingText.textContent = '';
+
+  function typeNext() {
+    if (charIndex < phrase.length) {
+      $loadingText.textContent = phrase.substring(0, charIndex + 1);
+      charIndex++;
+      loadingTypewriterTimerId = setTimeout(typeNext, 20);
+    } else {
+      // Hold the completed phrase, then move to next
+      loadingTypewriterTimerId = setTimeout(function() {
+        loadingPhraseIndex++;
+        if (loadingPhraseIndex >= LOADING_PHRASES.length) {
+          // All 4 phrases shown at least once
+          typewriterFinishedAllPhrases = true;
+          if (assetsReady) {
+            showClickToBegin();
+            return;
+          }
+          // Assets not ready — keep cycling while we wait
+          loadingPhraseIndex = 0;
+        }
+        typePhrase(LOADING_PHRASES[loadingPhraseIndex]);
+      }, 700);
+    }
+  }
+  typeNext();
+}
+
+// Start typewriter immediately
+startLoadingTypewriter();
+
+// =================================================
+// ASSET PRELOADER
+// =================================================
+var assetsReady = false;
+var typewriterFinishedAllPhrases = false;
+
+var PRELOAD_VIDEOS = [
+  '00_assets/intro/intro_2.mp4',
+  '00_assets/intro/intro_3.mp4',
+  '00_assets/intro/INTRO_4.mp4',
+  '00_assets/horsemp4/starburst_idle.mp4',
+  '00_assets/horsemp4/horse_idle.mp4',
+  '00_assets/horsemp4/horse_rear.mp4',
+  '00_assets/bg.mp4',
+];
+
+var PRELOAD_IMAGES = [
+  '00_assets/main_bg.png',
+  '00_assets/warning.png',
+  '00_assets/horse_head.svg',
+];
+
+var PRELOAD_OUTRO_COUNT = 38;
+
+function preloadAllAssets() {
+  var totalRequired = PRELOAD_VIDEOS.length + PRELOAD_IMAGES.length;
+  var loadedCount = 0;
+
+  function onAssetReady() {
+    loadedCount++;
+    if (loadedCount >= totalRequired) {
+      assetsReady = true;
+      checkShowClickToBegin();
+    }
+  }
+
+  // Preload videos
+  PRELOAD_VIDEOS.forEach(function(src) {
+    var video = document.createElement('video');
+    video.preload = 'auto';
+    video.muted = true;
+    video.playsInline = true;
+    video.addEventListener('canplaythrough', function handler() {
+      video.removeEventListener('canplaythrough', handler);
+      onAssetReady();
+    });
+    video.addEventListener('error', function() {
+      console.warn('Failed to preload video:', src);
+      onAssetReady(); // Don't block forever
+    });
+    video.src = src;
+    video.load();
+  });
+
+  // Preload images
+  PRELOAD_IMAGES.forEach(function(src) {
+    var img = new Image();
+    img.onload = onAssetReady;
+    img.onerror = function() {
+      console.warn('Failed to preload image:', src);
+      onAssetReady();
+    };
+    img.src = src;
+  });
+
+  // Outro PNGs: fire-and-forget background preload (non-blocking)
+  for (var i = 0; i < PRELOAD_OUTRO_COUNT; i++) {
+    var outroImg = new Image();
+    outroImg.src = '00_assets/OUTRO/OUTRO_' + String(i).padStart(5, '0') + '.png';
+  }
+}
+
+function checkShowClickToBegin() {
+  if (assetsReady && typewriterFinishedAllPhrases) {
+    showClickToBegin();
+  }
+}
+
+function showClickToBegin() {
+  // Stop early inline typewriter if still running
+  if (window.__earlyTypewriter) {
+    window.__earlyTypewriter.stop();
+    window.__earlyTypewriter = null;
+  }
+  stopLoadingTypewriter();
+  $loadingText.textContent = 'click to begin (also please enable audio)';
+  $loadingText.classList.add('ready');
+  $intro1.classList.add('click-ready');
+}
+
+// Start preloading immediately
+preloadAllAssets();
+
+// =================================================
+// UTILITIES
+// =================================================
+function rand(min, max) { return min + Math.random() * (max - min); }
+function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+function pickRandom(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Polyfill for padStart (in case browser doesn't support it)
+if (!String.prototype.padStart) {
+  String.prototype.padStart = function(targetLength, padString) {
+    targetLength = targetLength >> 0;
+    padString = String(typeof padString !== 'undefined' ? padString : ' ');
+    if (this.length >= targetLength) {
+      return String(this);
+    } else {
+      targetLength = targetLength - this.length;
+      if (targetLength > padString.length) {
+        padString += padString.repeat(targetLength / padString.length);
+      }
+      return padString.slice(0, targetLength) + String(this);
+    }
+  };
+}
+
+// =================================================
+// HORSE ANIMATION (video-based)
+// =================================================
+function setHorseAnimation(mode, looping, onComplete) {
+  var horseVideo = document.getElementById('horse-video');
+  var starburstVideo = document.getElementById('starburst-video');
+  if (!horseVideo || !starburstVideo) return;
+
+  horseAnimMode = mode;
+
+  var horseSrc = (mode === 'rearing')
+    ? '00_assets/horsemp4/horse_rear.mp4'
+    : '00_assets/horsemp4/horse_idle.mp4';
+  var starburstSrc = (mode === 'rearing')
+    ? '00_assets/horsemp4/starburst_rear.mp4'
+    : '00_assets/horsemp4/starburst_idle.mp4';
+
+  horseVideo.loop = looping;
+  starburstVideo.loop = looping;
+
+  // Listen for 'ended' on non-looping playback
+  if (!looping && onComplete) {
+    horseVideo.addEventListener('ended', function handler() {
+      horseVideo.removeEventListener('ended', handler);
+      onComplete();
+    });
+  }
+
+  // Only reload if source actually changed
+  var currentHorseSrc = horseVideo.getAttribute('src') || '';
+  if (!currentHorseSrc.endsWith(horseSrc.split('/').pop())) {
+    horseVideo.src = horseSrc;
+    starburstVideo.src = starburstSrc;
+    horseVideo.load();
+    starburstVideo.load();
+    starburstVideo.play().catch(function() {});
+    horseVideo.play().catch(function() {});
+  }
+}
+
+function playRearingAnimation(onComplete) {
+  playNeighSound();
+  setHorseAnimation('rearing', false, function() {
+    setHorseAnimation('idle', true, null);
+    if (onComplete) onComplete();
+  });
+}
+
+// =================================================
+// GAME FLOW
+// =================================================
+function initGame() {
+  state.phase = 'idle';
+  state.nextWindowId = 0;
+  state.currentStage = 0;
+  state.stage1ClosedCount = 0;
+  state.stage2Active = false;
+  state.stage3Active = false;
+  state.bossWindow = null;
+  state.bossClickCount = 0;
+  state.bossActive = false;
+  state.zodiacSpawnIndex = 0;
+  state.zodiacWindows = [];
+  state.diagonalAngle = Math.PI / 4;
+  state.diagonalAngleStart = 0;
+  lastMouseX = -9999;
+  lastMouseY = -9999;
+  if (state.dummySpawnTimerId) {
+    clearInterval(state.dummySpawnTimerId);
+    state.dummySpawnTimerId = null;
+  }
+  if (state.pixelGlitchTimerId) {
+    clearInterval(state.pixelGlitchTimerId);
+    state.pixelGlitchTimerId = null;
+  }
+  // Reset pixelation to default
+  setPixelSize(1);
+  clearAllTimers();
+  removeAllWindows();
+  updateHUD();
+}
+
+function startGame() {
+  // Full game start (used by start-screen button, restart, etc.)
+  initGame();
+  state.phase = 'playing';
+  stopAllAudio();
+  startBgMusic();
+  $startScreen.classList.add('hidden');
+  $endScreen.classList.add('hidden');
+  $gameArena.classList.remove('hidden');
+
+  // Restore horse/starburst display (may be hidden after win)
+  document.getElementById('horse-container').style.display = '';
+  document.getElementById('starburst-video').style.display = '';
+  document.getElementById('outro-overlay').classList.add('hidden');
+  if (outroTimerId) { clearInterval(outroTimerId); outroTimerId = null; }
+
+  // Starburst visible during gameplay, enable cursor hover
+  document.getElementById('starburst-video').classList.remove('preview-hidden');
+  horseCursorActive = true;
+  document.addEventListener('mousemove', handleHorseHover);
+  document.getElementById('hud').style.display = '';
+
+  // Initialize horse animation FIRST (before glitchGL hides it)
+  setHorseAnimation('idle', true, null);
+
+  // Initialize glitchGL after a short delay (needs target element visible)
+  setTimeout(function() {
+    initGlitchGL();
+  }, 100);
+
+  startStage1();
+  state.animFrameId = requestAnimationFrame(gameLoop);
+}
+
+function beginGameplay() {
+  // Lightweight start from idle preview state (game-arena already visible, horse already playing)
+  initGame();
+  state.phase = 'playing';
+
+  // Stop wind ambience, start bg music
+  stopWindAmbience();
+  startBgMusic();
+
+  // Show HUD
+  document.getElementById('hud').style.display = '';
+  updateHUD();
+
+  // Initialize glitchGL after a short delay
+  setTimeout(function() {
+    initGlitchGL();
+  }, 100);
+
+  startStage1();
+  state.animFrameId = requestAnimationFrame(gameLoop);
+}
+
+function resetGame() {
+  clearAllTimers();
+  removeAllWindows();
+  state.phase = 'idle';
+  $gameArena.classList.add('hidden');
+  $endScreen.classList.add('hidden');
+  $startScreen.classList.remove('hidden');
+  initGame();
+}
+
+function clearAllTimers() {
+  for (var i = 0; i < state.spawnTimerIds.length; i++) clearTimeout(state.spawnTimerIds[i]);
+  state.spawnTimerIds = [];
+  if (state.animFrameId) { cancelAnimationFrame(state.animFrameId); state.animFrameId = null; }
+  if (state.dummySpawnTimerId) { clearInterval(state.dummySpawnTimerId); state.dummySpawnTimerId = null; }
+  if (state.pixelGlitchTimerId) { clearInterval(state.pixelGlitchTimerId); state.pixelGlitchTimerId = null; }
+}
+
+function removeAllWindows() {
+  for (var i = 0; i < state.activeWindows.length; i++) {
+    var win = state.activeWindows[i];
+    if (win.element && win.element.parentNode) win.element.parentNode.removeChild(win.element);
+  }
+  state.activeWindows = [];
+  state.zodiacWindows = [];
+  state.bossWindow = null;
+}
+
+// =================================================
+// POSITIONING FUNCTIONS
+// =================================================
+function positionRandom(w, h) {
+  // Place anywhere within screen bounds (full area)
+  var padX = 10;
+  var padTop = 10;
+  var padBottom = 10;
+  var maxX = window.innerWidth - w - padX;
+  var maxY = window.innerHeight - h - padBottom;
+  var x = padX + Math.random() * (maxX - padX);
+  var y = padTop + Math.random() * (maxY - padTop);
+  return { x: x, y: y };
+}
+
+function positionDiagonalForZodiac(index, total, w, h) {
+  // Anchor point: bottom-right of screen (Rat stays fixed here)
+  var anchorX = window.innerWidth * 0.85 - w;
+  var anchorY = window.innerHeight * 0.85 - h;
+  var angle = state.diagonalAngle;
+
+  // Dynamic spacing: grows when diagonal (PI/4), shrinks when horizontal/vertical
+  var diagonality = 1 - Math.abs(angle - Math.PI / 4) / (Math.PI / 4);
+  diagonality = Math.max(0, Math.min(1, diagonality));
+  var minSpacing = 25;
+  var maxSpacing = 100;
+  var spacing = minSpacing + diagonality * (maxSpacing - minSpacing);
+
+  // Slot = index directly: Rat (index 0) → slot 0 (anchor, bottom-right),
+  //                        Horse (index 11) → slot 11 (farthest from anchor, top-left)
+  var slot = index;
+
+  var dx = Math.cos(angle) * spacing;
+  var dy = Math.sin(angle) * spacing;
+  var x = anchorX - slot * dx;
+  var y = anchorY - slot * dy;
+  x = Math.max(10, Math.min(window.innerWidth - w - 10, x));
+  y = Math.max(10, Math.min(window.innerHeight - h - 10, y));
+  return { x: x, y: y };
+}
+
+// =================================================
+// STAGE SYSTEM
+// =================================================
+function startStage1() {
+  state.currentStage = 1;
+  state.stage1ClosedCount = 0;
+  setPixelSize(1);
+  updateHUD();
+
+  // Show trojan message
+  var trojanEl = document.getElementById('trojan-msg');
+  trojanEl.classList.add('visible');
+  setTimeout(function() { trojanEl.classList.remove('visible'); }, 3000);
+
+  var w = STAGE_CONFIG.stage1.windowWidth;
+  var h = STAGE_CONFIG.stage1.windowHeight;
+
+  for (var i = 0; i < STAGE_CONFIG.stage1.windowCount; i++) {
+    (function(index) {
+      var tid = setTimeout(function() {
+        if (state.phase !== 'playing') return;
+        var msg = pickRandom(CONFIG.messages);
+        var pos = positionRandom(w, h);
+        spawnStageWindow({
+          msg: msg,
+          x: pos.x,
+          y: pos.y,
+          width: w,
+          height: h,
+          movement: 'float',
+          timeLimit: STAGE_CONFIG.stage1.timeLimit,
+          windowType: 'stage1',
+        });
+        updateHUD();
+      }, index * 150);
+      state.spawnTimerIds.push(tid);
+    })(i);
+  }
+}
+
+// Rearrange remaining Stage 1 windows — nudge within 100px of current position
+function rearrangeStage1Windows() {
+  var nudgeMax = 100;
+  for (var i = 0; i < state.activeWindows.length; i++) {
+    var win = state.activeWindows[i];
+    if (win.windowType !== 'stage1' || win.closing) continue;
+    var nx = win.floatBaseX + (Math.random() * 2 - 1) * nudgeMax;
+    var ny = win.floatBaseY + (Math.random() * 2 - 1) * nudgeMax;
+    // Clamp to screen
+    nx = Math.max(10, Math.min(window.innerWidth - win.width - 10, nx));
+    ny = Math.max(10, Math.min(window.innerHeight - win.height - 10, ny));
+    win.floatBaseX = nx;
+    win.floatBaseY = ny;
+    win.x = nx;
+    win.y = ny;
+    win.element.style.left = nx + 'px';
+    win.element.style.top = ny + 'px';
+  }
+}
+
+function startStage2() {
+  if (state.stage2Active) return;
+  state.currentStage = 2;
+  state.stage2Active = true;
+  setPixelSize(3);
+  state.zodiacSpawnIndex = 0;
+  state.zodiacWindows = [];
+  state.diagonalAngleStart = Date.now();
+  state.diagonalAngle = Math.PI / 4;
+  updateHUD();
+
+  // Play rearing animation before spawning zodiac windows
+  playRearingAnimation(function() {
+    // Animation complete, now spawn zodiac windows
+    spawnZodiacWindows();
+    // Begin dummy window spawning (slower rate in stage 2)
+    startDummySpawner();
+  });
+}
+
+function spawnZodiacWindows() {
+  // Spawn in reverse order: Horse (index 11) first at back, Rat (index 0) last on top
+  var spawnOrder = [];
+  for (var si = 11; si >= 0; si--) spawnOrder.push(si);
+
+  function spawnNextZodiac() {
+    if (state.phase !== 'playing') return;
+    var spawnStep = state.zodiacSpawnIndex;
+    if (spawnStep >= 12) return;
+
+    var idx = spawnOrder[spawnStep]; // Actual zodiac index (11, 10, 9, ... 0)
+    var zodiac = ZODIAC_MESSAGES[idx];
+    var isHorse = (idx === 11);
+    var w = STAGE_CONFIG.stage2.windowWidth;
+    var h = STAGE_CONFIG.stage2.windowHeight;
+    var pos = positionDiagonalForZodiac(idx, 12, w, h);
+
+    var winObj = spawnStageWindow({
+      msg: { title: zodiac.title, body: zodiac.body, emoji: zodiac.emoji, type: 'error' },
+      x: pos.x,
+      y: pos.y,
+      width: w,
+      height: h,
+      movement: 'static',
+      timeLimit: null, // No time limit on zodiac windows — just close to advance
+      windowType: isHorse ? 'boss' : 'zodiac',
+      zodiacIndex: idx,
+    });
+
+    if (winObj) {
+      state.zodiacWindows.push(winObj);
+      if (isHorse) {
+        state.bossWindow = winObj;
+        winObj.element.classList.add('boss-window');
+      }
+    }
+
+    state.zodiacSpawnIndex++;
+    updateHUD();
+    if (state.zodiacSpawnIndex < 12) {
+      var tid = setTimeout(spawnNextZodiac, STAGE_CONFIG.stage2.spawnStagger);
+      state.spawnTimerIds.push(tid);
+    }
+  }
+  spawnNextZodiac();
+}
+
+function activateBoss() {
+  if (state.stage3Active) return;
+  state.currentStage = 3;
+  state.stage3Active = true;
+  state.bossActive = true;
+  state.bossClickCount = 0;
+  updateHUD();
+
+  // Play rearing animation when boss activates
+  playRearingAnimation(function() {
+    // Animation complete, continue with boss activation
+    if (state.bossWindow) {
+      // Boss has no progress bar (timeLimit is null), nothing to hide
+      state.bossWindow.movementType = 'flee';
+      updateBossMessage(0);
+
+      // Remove boss from zodiacWindows so it no longer follows diagonal pivot
+      var bIdx = state.zodiacWindows.indexOf(state.bossWindow);
+      if (bIdx !== -1) state.zodiacWindows.splice(bIdx, 1);
+    }
+
+    // Restart dummy spawner at stage 3's faster rate
+    if (state.dummySpawnTimerId) {
+      clearInterval(state.dummySpawnTimerId);
+      state.dummySpawnTimerId = null;
+    }
+    startDummySpawner();
+    startPixelGlitch();
+  });
+}
+
+function updateBossMessage(clickIndex) {
+  if (!state.bossWindow || !state.bossWindow.element) return;
+  var msgIndex = Math.min(clickIndex, BOSS_MESSAGES.length - 1);
+  var bodyEl = state.bossWindow.element.querySelector('.body-text');
+  if (bodyEl) {
+    bodyEl.textContent = BOSS_MESSAGES[msgIndex];
+  }
+}
+
+// =================================================
+// DUMMY WINDOW SPAWNER
+// =================================================
+function startDummySpawner() {
+  var stageKey = state.stage3Active ? 'stage3' : 'stage2';
+  var interval = STAGE_CONFIG[stageKey].dummySpawnInterval;
+
+  state.dummySpawnTimerId = setInterval(function() {
+    if (state.phase !== 'playing' || (!state.stage2Active && !state.stage3Active)) {
+      clearInterval(state.dummySpawnTimerId);
+      state.dummySpawnTimerId = null;
+      return;
+    }
+
+    // Use current stage's max (dynamically checks — stage may have changed)
+    var maxOnScreen = state.stage3Active
+      ? STAGE_CONFIG.stage3.dummyMaxOnScreen
+      : STAGE_CONFIG.stage2.dummyMaxOnScreen;
+
+    var currentDummies = 0;
+    for (var i = 0; i < state.activeWindows.length; i++) {
+      if (state.activeWindows[i].isDummy && !state.activeWindows[i].closing) currentDummies++;
+    }
+    if (currentDummies >= maxOnScreen) return;
+
+    var msg = pickRandom(DUMMY_MESSAGES);
+    var w = randInt(STAGE_CONFIG.stage3.dummyMinWidth, STAGE_CONFIG.stage3.dummyMaxWidth);
+    var h = randInt(STAGE_CONFIG.stage3.dummyMinHeight, STAGE_CONFIG.stage3.dummyMaxHeight);
+    var pos = positionRandom(w, h);
+    var dummyWin = spawnStageWindow({
+      msg: { title: msg.title, body: msg.body, type: 'system' },
+      x: pos.x,
+      y: pos.y,
+      width: w,
+      height: h,
+      movement: 'static',
+      timeLimit: null,
+      windowType: 'dummy',
+    });
+    // Random z-index: 80% behind boss, 20% in front
+    if (dummyWin && dummyWin.element) {
+      var bossZ = state.bossWindow ? (100 + state.bossWindow.id) : 200;
+      if (Math.random() < 0.8) {
+        dummyWin.element.style.zIndex = bossZ - randInt(1, 20);
+      } else {
+        dummyWin.element.style.zIndex = bossZ + randInt(1, 20);
+      }
+    }
+  }, interval);
+}
+
+// =================================================
+// PIXELATION GLITCH SYSTEM (per-stage)
+// =================================================
+function setPixelSize(size) {
+  GLITCH_CONFIG.pixelation.pixelSize = size;
+  var enabled = size > 1;
+  GLITCH_CONFIG.pixelation.enabled = enabled;
+  var allEffects = [glitchEffects.background, glitchEffects.horse];
+  allEffects.forEach(function(effect) {
+    if (effect) {
+      effect.updateOptions({ effects: { pixelation: { enabled: enabled, pixelSize: size } } });
+    }
+  });
+}
+
+function startPixelGlitch() {
+  // Stage 3: randomly shift pixel size between 3 and 18 every 500ms
+  if (state.pixelGlitchTimerId) {
+    clearInterval(state.pixelGlitchTimerId);
+  }
+  state.pixelGlitchTimerId = setInterval(function() {
+    if (state.phase !== 'playing' || !state.stage3Active) {
+      clearInterval(state.pixelGlitchTimerId);
+      state.pixelGlitchTimerId = null;
+      return;
+    }
+    var size = randInt(3, 18);
+    setPixelSize(size);
+  }, 500);
+}
+
+// =================================================
+// WINDOW SPAWNING
+// =================================================
+function spawnStageWindow(opts) {
+  if (state.phase !== 'playing') return null;
+
+  var msg = opts.msg;
+  var w = opts.width || 280;
+  var h = opts.height || 160;
+  var timeLimit = (opts.timeLimit !== null && opts.timeLimit !== undefined) ? opts.timeLimit * 1000 : null;
+
+  var winObj = {
+    id: state.nextWindowId++,
+    element: null,
+    contentEl: null,
+    progressFill: null,
+    spawnTime: Date.now(),
+    timeLimit: timeLimit,
+    x: opts.x !== undefined ? opts.x : 0,
+    y: opts.y !== undefined ? opts.y : 0,
+    vx: 0,
+    vy: 0,
+    movementType: opts.movement || 'static',
+    width: w,
+    height: h,
+    closing: false,
+    windowType: opts.windowType || 'normal',
+    zodiacIndex: opts.zodiacIndex !== undefined ? opts.zodiacIndex : -1,
+    isDummy: opts.windowType === 'dummy',
+    isBoss: opts.windowType === 'boss',
+    noSpawnAnim: opts.noSpawnAnim || false,
+    // Float state (random phase offset per window)
+    floatPhase: Math.random() * Math.PI * 2,
+    floatPhaseY: Math.random() * Math.PI * 2,
+    floatBaseX: opts.x !== undefined ? opts.x : 0,
+    floatBaseY: opts.y !== undefined ? opts.y : 0,
+  };
+
+  var el = createWindowElement(winObj, msg);
+  winObj.element = el;
+  winObj.contentEl = el.querySelector('.window-content');
+  winObj.progressFill = el.querySelector('.progress-fill');
+
+  state.activeWindows.push(winObj);
+  $gameArena.appendChild(el);
+
+  // Play error sound for each gameplay window spawn
+  playErrorSound();
+
+  return winObj;
+}
+
+// Witty left-button labels for zodiac windows (randomly picked)
+var ZODIAC_BTN_LABELS = ['Whatever', 'OK fine', 'So?', 'Cool story', 'Neigh', 'Sure', 'Lol', 'Yawn'];
+
+function createWindowElement(winObj, msg) {
+  var el = document.createElement('div');
+  el.className = winObj.noSpawnAnim ? 'game-window' : 'game-window spawning';
+  el.style.width = winObj.width + 'px';
+  el.style.height = winObj.height + 'px';
+  el.style.left = winObj.x + 'px';
+  el.style.top = winObj.y + 'px';
+  el.style.zIndex = 100 + winObj.id;
+
+  var html = '';
+  var titleButtons =
+    '<div class="title-buttons">' +
+      '<button class="title-btn" aria-label="Minimize">&#8212;</button>' +
+      '<button class="title-btn" aria-label="Maximize">&#9723;</button>' +
+      '<button class="title-btn close-btn" aria-label="Close">&#10005;</button>' +
+    '</div>';
+
+  if (winObj.windowType === 'stage1') {
+    // TYPE 1: Countdown window — warning icon + progress bar + OK/Cancel
+    el.classList.add('window-type1');
+    html =
+      '<div class="window-content">' +
+        '<div class="title-bar">' +
+          '<span class="title-text">' + escapeHtml(msg.title) + '</span>' +
+          titleButtons +
+        '</div>' +
+        '<div class="window-body">' +
+          '<div class="body-content">' +
+            '<div class="body-icon"><img src="00_assets/warning.png" alt="Warning"></div>' +
+            '<div class="body-text">' + escapeHtml(msg.body) + '</div>' +
+          '</div>' +
+          '<div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>' +
+          '<div class="button-row">' +
+            '<button class="win-btn nonfunctional">OK</button>' +
+            '<button class="win-btn cancel-btn">Cancel</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+  } else if (winObj.windowType === 'zodiac' || winObj.windowType === 'boss') {
+    // TYPE 2: Zodiac window — emoji icon + witty button / Close
+    el.classList.add('window-type2');
+    var emoji = msg.emoji || '';
+    var bodyText = msg.body || '';
+    var wittyLabel = pickRandom(ZODIAC_BTN_LABELS);
+    html =
+      '<div class="window-content">' +
+        '<div class="title-bar">' +
+          '<span class="title-text">' + escapeHtml(msg.title) + '</span>' +
+          titleButtons +
+        '</div>' +
+        '<div class="window-body">' +
+          '<div class="body-content">' +
+            '<div class="body-icon">' + emoji + '</div>' +
+            '<div class="body-text">' + escapeHtml(bodyText) + '</div>' +
+          '</div>' +
+          '<div class="button-row">' +
+            '<button class="win-btn cancel-btn">' + escapeHtml(wittyLabel) + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+  } else if (winObj.windowType === 'dummy') {
+    // TYPE 3: Dummy window — centered text, no buttons, no close
+    el.classList.add('window-type3');
+    html =
+      '<div class="window-content">' +
+        '<div class="title-bar">' +
+          '<span class="title-text">' + escapeHtml(msg.title) + '</span>' +
+        '</div>' +
+        '<div class="window-body">' +
+          '<div class="body-text">' + escapeHtml(msg.body) + '</div>' +
+        '</div>' +
+      '</div>';
+
+  } else {
+    // Fallback generic
+    html =
+      '<div class="window-content">' +
+        '<div class="title-bar">' +
+          '<span class="title-text">' + escapeHtml(msg.title) + '</span>' +
+          titleButtons +
+        '</div>' +
+        '<div class="window-body">' +
+          '<div class="body-text">' + escapeHtml(msg.body) + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  el.innerHTML = html;
+
+  // Spawn animation handler
+  el.addEventListener('animationend', function handler() {
+    el.classList.remove('spawning');
+    el.removeEventListener('animationend', handler);
+  });
+
+  // Click handlers — only close-btn (X) and cancel-btn close the window
+  if (winObj.windowType !== 'dummy') {
+    var closeBtn = el.querySelector('.close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeWindow(winObj);
+      });
+    }
+    var cancelBtn = el.querySelector('.cancel-btn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeWindow(winObj);
+      });
+    }
+  }
+
+  return el;
+}
+
+// =================================================
+// CLOSE WINDOW
+// =================================================
+function closeWindow(winObj) {
+  if (winObj.closing) return;
+
+  // Dummy windows: completely ignore clicks
+  if (winObj.isDummy) return;
+
+  // Boss window: route to boss click handler
+  if (winObj.isBoss) {
+    handleBossClick(winObj);
+    return;
+  }
+
+  // Normal close
+  winObj.closing = true;
+  winObj.element.classList.add('closing');
+
+  setTimeout(function() {
+    if (winObj.element.parentNode) winObj.element.parentNode.removeChild(winObj.element);
+    var idx = state.activeWindows.indexOf(winObj);
+    if (idx !== -1) state.activeWindows.splice(idx, 1);
+
+    // Also remove from zodiacWindows if applicable
+    var zIdx = state.zodiacWindows.indexOf(winObj);
+    if (zIdx !== -1) state.zodiacWindows.splice(zIdx, 1);
+
+    updateHUD();
+
+    if (state.phase !== 'playing') return;
+
+    // Stage 1: rearrange remaining windows + check advance
+    if (winObj.windowType === 'stage1') {
+      state.stage1ClosedCount++;
+      rearrangeStage1Windows();
+      if (state.stage1ClosedCount >= STAGE_CONFIG.stage1.closedToAdvance && !state.stage2Active) {
+        startStage2();
+      }
+    }
+  }, 150);
+}
+
+function handleBossClick(winObj) {
+  // First click on horse during Stage 2: activate boss mode
+  if (!state.bossActive) {
+    activateBoss();
+    return;
+  }
+
+  // Cooldown: prevent rapid multi-clicks (300ms)
+  var now = Date.now();
+  if (winObj._lastBossClick && now - winObj._lastBossClick < 300) return;
+  winObj._lastBossClick = now;
+
+  // Boss is active: count the click
+  state.bossClickCount++;
+  updateBossMessage(state.bossClickCount);
+  updateHUD();
+
+  // Visual feedback
+  winObj.element.classList.remove('boss-hit');
+  void winObj.element.offsetWidth; // force reflow
+  winObj.element.classList.add('boss-hit');
+
+  if (state.bossClickCount >= STAGE_CONFIG.stage3.bossMaxHP) {
+    // VICTORY
+    winObj.closing = true;
+    winObj.element.classList.add('closing');
+    setTimeout(function() {
+      if (winObj.element.parentNode) winObj.element.parentNode.removeChild(winObj.element);
+      var idx = state.activeWindows.indexOf(winObj);
+      if (idx !== -1) state.activeWindows.splice(idx, 1);
+      state.bossWindow = null;
+      triggerWin();
+    }, 150);
+  }
+}
+
+// =================================================
+// GAME LOOP
+// =================================================
+function gameLoop() {
+  if (state.phase !== 'playing') return;
+
+  var now = Date.now();
+
+  for (var i = state.activeWindows.length - 1; i >= 0; i--) {
+    var win = state.activeWindows[i];
+    if (win.closing) continue;
+
+    // Timer (skip for windows with no timer: boss, dummies)
+    if (win.timeLimit !== null) {
+      var elapsed = now - win.spawnTime;
+      var remaining = win.timeLimit - elapsed;
+      var pct = Math.max(0, remaining / win.timeLimit);
+
+      var fill = win.progressFill;
+      if (fill) {
+        fill.style.width = (pct * 100) + '%';
+      }
+
+      // Expiration
+      if (remaining <= 0) {
+        triggerLose(win);
+        return;
+      }
+    }
+
+    // Floating movement (Stage 1)
+    if (win.movementType === 'float') {
+      var t = now / 1000;
+      var speed = STAGE_CONFIG.stage1.floatSpeed;
+      var radius = STAGE_CONFIG.stage1.floatRadius;
+      var offsetX = Math.sin(t * speed + win.floatPhase) * radius;
+      var offsetY = Math.cos(t * speed * 0.7 + win.floatPhaseY) * radius;
+      win.x = win.floatBaseX + offsetX;
+      win.y = win.floatBaseY + offsetY;
+      // Keep on screen
+      win.x = Math.max(10, Math.min(window.innerWidth - win.width - 10, win.x));
+      win.y = Math.max(10, Math.min(window.innerHeight - win.height - 10, win.y));
+      win.element.style.left = win.x + 'px';
+      win.element.style.top = win.y + 'px';
+    }
+
+    // Boss flee movement with gallop
+    if (win.movementType === 'flee' && state.bossActive) {
+      var bcx = win.x + win.width / 2;
+      var bcy = win.y + win.height / 2;
+      var dx = bcx - lastMouseX;
+      var dy = bcy - lastMouseY;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      var speed = STAGE_CONFIG.stage3.bossSpeed;
+      var isFleeing = dist < STAGE_CONFIG.stage3.bossRepulsionRadius && dist > 1;
+
+      if (isFleeing) {
+        // Pure repulsion — flee from mouse, no gallop overlay
+        var force = (1 - dist / STAGE_CONFIG.stage3.bossRepulsionRadius) * speed;
+        var nx = dx / dist;
+        var ny = dy / dist;
+        win.x += nx * force;
+        win.y += ny * force;
+      } else {
+        // Idle wander with gallop rhythm
+        var gallopT = now / 1000;
+        var gallopFreq = 2;
+        var gallopAmp = 3;
+        var gallopY = Math.sin(gallopT * gallopFreq * Math.PI * 2) * gallopAmp;
+        var gallopX = Math.sin(gallopT * gallopFreq * Math.PI) * 1.5;
+
+        if (!win._wanderAngle) win._wanderAngle = Math.random() * Math.PI * 2;
+        if (!win._wanderTimer) win._wanderTimer = 0;
+        win._wanderTimer++;
+        // Change direction occasionally
+        if (win._wanderTimer % 120 === 0) {
+          win._wanderAngle += (Math.random() - 0.5) * Math.PI;
+        }
+        var wanderSpeed = speed * 0.25;
+        win.x += Math.cos(win._wanderAngle) * wanderSpeed * 0.3 + gallopX;
+        win.y += Math.sin(win._wanderAngle) * wanderSpeed * 0.3 + gallopY;
+        // Bounce off edges
+        if (win.x <= 10 || win.x + win.width >= window.innerWidth - 10) {
+          win._wanderAngle = Math.PI - win._wanderAngle;
+        }
+        if (win.y <= 10 || win.y + win.height >= window.innerHeight - 10) {
+          win._wanderAngle = -win._wanderAngle;
+        }
+      }
+
+      // Keep boss on screen
+      win.x = Math.max(10, Math.min(window.innerWidth - win.width - 10, win.x));
+      win.y = Math.max(10, Math.min(window.innerHeight - win.height - 10, win.y));
+
+      win.element.style.left = win.x + 'px';
+      win.element.style.top = win.y + 'px';
+    }
+  }
+
+  // Update zodiac diagonal pivot (Stage 2)
+  if (state.stage2Active && state.zodiacWindows.length > 0) {
+    var elapsedS = (now - state.diagonalAngleStart) / 1000;
+    state.diagonalAngle = (Math.PI / 4) + Math.sin(elapsedS * STAGE_CONFIG.stage2.diagonalPivotSpeed) * (Math.PI / 6);
+
+    for (var j = 0; j < state.zodiacWindows.length; j++) {
+      var zWin = state.zodiacWindows[j];
+      if (zWin.closing || !zWin.element) continue;
+      var newPos = positionDiagonalForZodiac(
+        zWin.zodiacIndex, 12,
+        STAGE_CONFIG.stage2.windowWidth, STAGE_CONFIG.stage2.windowHeight
+      );
+      zWin.x = newPos.x;
+      zWin.y = newPos.y;
+      zWin.element.style.left = zWin.x + 'px';
+      zWin.element.style.top = zWin.y + 'px';
+    }
+  }
+
+
+  state.animFrameId = requestAnimationFrame(gameLoop);
+}
+
+// =================================================
+// WIN / LOSE
+// =================================================
+var OUTRO_FRAME_COUNT = 38;
+var OUTRO_FPS = 24;
+var outroTimerId = null;
+
+function triggerWin() {
+  state.phase = 'won';
+  clearAllTimers();
+  stopBgMusic();
+  audioVictory.currentTime = 0;
+  audioVictory.play().catch(function() {});
+
+  // Remove all remaining windows
+  for (var i = state.activeWindows.length - 1; i >= 0; i--) {
+    var w = state.activeWindows[i];
+    if (w.element && w.element.parentNode) w.element.parentNode.removeChild(w.element);
+  }
+  state.activeWindows = [];
+  state.zodiacWindows = [];
+
+  // Disable hover
+  idlePreviewActive = false;
+  horseCursorActive = false;
+  document.removeEventListener('mousemove', handleHorseHover);
+  $gameArena.classList.remove('horse-hover');
+
+  // Hide horse, starburst, and HUD
+  var horseContainer = document.getElementById('horse-container');
+  var horseVideo = document.getElementById('horse-video');
+  var starburstVideo = document.getElementById('starburst-video');
+  var hudEl = document.getElementById('hud');
+  if (horseVideo) horseVideo.pause();
+  if (starburstVideo) starburstVideo.pause();
+  horseContainer.style.display = 'none';
+  starburstVideo.style.display = 'none';
+  hudEl.style.display = 'none';
+
+  // Clean up horse glitchGL (horse is hidden post-win)
+  if (glitchEffects.horse) { glitchEffects.horse.cleanup(); glitchEffects.horse = null; }
+  // Keep background glitchGL alive for interactive end screen
+
+  // Play outro PNG sequence, then show end window
+  playOutroSequence(function() {
+    $endTitle.textContent = '\uD83C\uDF89 \u606D\u559C\u53D1\u8D22! \uD83C\uDF89';
+    $endMessage.textContent = 'The Virus Has Been Vanquished! Prosperity be upon you!';
+    $endScreen.classList.remove('hidden');
+    playAlertSound();
+  });
+}
+
+function playOutroSequence(onComplete) {
+  var overlay = document.getElementById('outro-overlay');
+  var frameImg = document.getElementById('outro-frame');
+  var currentFrame = 0;
+
+  overlay.classList.remove('hidden');
+  frameImg.src = '00_assets/OUTRO/OUTRO_' + String(currentFrame).padStart(5, '0') + '.png';
+
+  outroTimerId = setInterval(function() {
+    currentFrame++;
+    if (currentFrame >= OUTRO_FRAME_COUNT) {
+      clearInterval(outroTimerId);
+      outroTimerId = null;
+      setTimeout(function() {
+        overlay.classList.add('hidden');
+        if (onComplete) onComplete();
+      }, 300);
+      return;
+    }
+    frameImg.src = '00_assets/OUTRO/OUTRO_' + String(currentFrame).padStart(5, '0') + '.png';
+  }, 1000 / OUTRO_FPS);
+}
+
+function triggerLose(winObj) {
+  state.phase = 'lost';
+  clearAllTimers();
+  stopBgMusic();
+  winObj.element.classList.add('expired');
+  var stageNames = ['', 'Surprise Attack', 'Main Forces', 'Final Boss'];
+  $endTitle.textContent = '\uD83D\uDC80 GAME OVER \uD83D\uDC80';
+  $endMessage.textContent = 'A window expired during Stage ' + state.currentStage + ': ' + (stageNames[state.currentStage] || '') + '!';
+  $endScreen.classList.remove('hidden');
+  playAlertSound();
+}
+
+// =================================================
+// HUD
+// =================================================
+function updateHUD() {
+  var stageNames = ['', 'Surprise Attack', 'Main Forces', 'Final Boss'];
+  $hudStage.textContent = 'Stage ' + (state.currentStage || 1) + ': ' + (stageNames[state.currentStage] || stageNames[1]);
+
+  var active = 0;
+  for (var i = 0; i < state.activeWindows.length; i++) {
+    if (!state.activeWindows[i].closing && !state.activeWindows[i].isDummy) active++;
+  }
+  $hudRemaining.textContent = 'Windows: ' + active;
+
+  if (state.bossActive) {
+    var remaining = STAGE_CONFIG.stage3.bossMaxHP - state.bossClickCount;
+    $hudBoss.style.display = '';
+    $hudBoss.textContent = 'Boss HP: ' + remaining + '/' + STAGE_CONFIG.stage3.bossMaxHP;
+  } else {
+    $hudBoss.style.display = 'none';
+  }
+}
+
+// =================================================
+// DEV TOOLBAR
+// =================================================
+function buildDevToolbar() {
+  var panel = document.getElementById('dev-panel');
+  var toggle = document.getElementById('dev-toggle');
+
+  toggle.addEventListener('click', function() {
+    panel.classList.toggle('hidden');
+  });
+
+  var html = '';
+
+  // ── Display ──
+  html += '<div class="dev-section">Display</div>';
+  html += devCheckbox('Show timer bars', 'cfg-showTimerBars', CONFIG.showTimerBars);
+  html += devCheckbox('Scanlines', 'cfg-showScanlines', CONFIG.showScanlines);
+
+  // ── Stage 1 ──
+  html += '<div class="dev-section">Stage 1: Surprise Attack</div>';
+  html += devStageRange('Window count', 'stage1', 'windowCount', 1, 20, 1);
+  html += devStageRange('Close to advance', 'stage1', 'closedToAdvance', 1, 20, 1);
+  html += devStageRange('Time limit (s)', 'stage1', 'timeLimit', 2, 30, 0.5);
+  html += devStageRange('Width', 'stage1', 'windowWidth', 120, 500, 10);
+  html += devStageRange('Height', 'stage1', 'windowHeight', 80, 300, 10);
+  html += devStageRange('Float speed', 'stage1', 'floatSpeed', 0, 2.0, 0.05);
+  html += devStageRange('Float radius', 'stage1', 'floatRadius', 0, 80, 1);
+
+  // ── Stage 2 ──
+  html += '<div class="dev-section">Stage 2: Main Forces</div>';
+  html += devStageRange('Time limit (s)', 'stage2', 'timeLimit', 2, 30, 0.5);
+  html += devStageRange('Width', 'stage2', 'windowWidth', 120, 500, 10);
+  html += devStageRange('Height', 'stage2', 'windowHeight', 80, 300, 10);
+  html += devStageRange('Stagger (ms)', 'stage2', 'spawnStagger', 20, 500, 10);
+  html += devStageRange('Spacing', 'stage2', 'diagonalSpacing', 10, 100, 5);
+  html += devStageRange('Pivot speed', 'stage2', 'diagonalPivotSpeed', 0, 1.0, 0.01);
+
+  // ── Stage 3 ──
+  html += '<div class="dev-section">Stage 3: Final Boss</div>';
+  html += devStageRange('Boss speed', 'stage3', 'bossSpeed', 0, 15, 0.5);
+  html += devStageRange('Boss radius', 'stage3', 'bossRepulsionRadius', 50, 500, 10);
+  html += devStageRange('Dummy interval (ms)', 'stage3', 'dummySpawnInterval', 500, 8000, 100);
+  html += devStageRange('Dummy max on screen', 'stage3', 'dummyMaxOnScreen', 1, 30, 1);
+  html += devStageRange('Dummy min W', 'stage3', 'dummyMinWidth', 80, 300, 10);
+  html += devStageRange('Dummy max W', 'stage3', 'dummyMaxWidth', 150, 500, 10);
+  html += devStageRange('Dummy min H', 'stage3', 'dummyMinHeight', 60, 250, 10);
+  html += devStageRange('Dummy max H', 'stage3', 'dummyMaxHeight', 100, 350, 10);
+
+  // ── Stage skip buttons ──
+  html += '<div class="dev-section">Stage Controls</div>';
+  html += '<div class="dev-row" style="justify-content:center;gap:6px;">';
+  html += '<button class="dev-btn" id="dev-stage1-btn">Stage 1</button>';
+  html += '<button class="dev-btn" id="dev-stage2-btn">Stage 2</button>';
+  html += '<button class="dev-btn" id="dev-stage3-btn">Stage 3</button>';
+  html += '</div>';
+  html += '<div class="dev-row" style="justify-content:center;gap:6px;margin-top:4px;">';
+  html += '<button class="dev-btn" id="dev-reset-btn">Reset Game</button>';
+  html += '</div>';
+
+  // ══════════════════════════════════════════════════
+  // glitchGL Effects
+  // ══════════════════════════════════════════════════
+  html += '<div class="dev-section">glitchGL Effects</div>';
+
+  // ── Global ──
+  html += '<div class="dev-subsection">Layer Intensities</div>';
+  html += devGlitchRange('Background', 'layers', 'background', 0, 10, 0.1);
+  html += devGlitchRange('Horse', 'layers', 'horse', 0, 10, 0.1);
+  html += devGlitchRange('Windows', 'layers', 'windows', 0, 10, 0.1);
+
+  // ── Interaction ──
+  html += '<div class="dev-subsection">Interaction</div>';
+  html += devGlitchCheckbox('Enabled', 'interaction', 'enabled');
+  html += devGlitchSelect('Shape', 'interaction', 'shape', {
+    'Circle': 'circle', 'Square': 'square', 'Diamond': 'diamond',
+    'Cross': 'cross', 'Plus': 'plus', 'Custom': 'custom'
+  });
+  html += devGlitchText('Custom Size', 'interaction', 'customSize');
+  html += devGlitchText('Custom URL', 'interaction', 'customUrl');
+  html += devGlitchCheckbox('Velocity', 'interaction', 'velocity');
+
+  // Interactive effects toggles
+  html += '<div class="dev-subsection">Interactive: Pixelation</div>';
+  html += devInteractionToggle('Pixel Size', 'pixelation', 'pixelSize');
+
+  html += '<div class="dev-subsection">Interactive: CRT</div>';
+  html += devInteractionToggle('Chromatic Aberration', 'crt', 'chromaticAberration');
+  html += devInteractionToggle('Scanlines', 'crt', 'scanlines');
+  html += devInteractionToggle('Phosphor Glow', 'crt', 'phosphorGlow');
+  html += devInteractionToggle('Curvature', 'crt', 'curvature');
+
+  html += '<div class="dev-subsection">Interactive: Glitch</div>';
+  html += devInteractionToggle('RGB Shift', 'glitch', 'rgbShift');
+  html += devInteractionToggle('Digital Noise', 'glitch', 'digitalNoise');
+  html += devInteractionToggle('Line Displacement', 'glitch', 'lineDisplacement');
+  html += devInteractionToggle('Bit Crushing', 'glitch', 'bitCrushing');
+  html += devInteractionToggle('Signal Dropout', 'glitch', 'signalDropout');
+  html += devInteractionToggle('Sync Errors', 'glitch', 'syncErrors');
+  html += devInteractionToggle('Interference Lines', 'glitch', 'interferenceLines');
+  html += devInteractionToggle('Frame Ghosting', 'glitch', 'frameGhosting');
+  html += devInteractionToggle('Stutter/Freeze', 'glitch', 'stutterFreeze');
+  html += devInteractionToggle('Datamoshing', 'glitch', 'datamoshing');
+
+  // ── Pixelation ──
+  html += '<div class="dev-subsection">Pixelation Effect</div>';
+  html += devGlitchCheckbox('Enabled', 'pixelation', 'enabled');
+  html += devGlitchRange('Pixel Size', 'pixelation', 'pixelSize', 1, 64, 1);
+  html += devGlitchSelect('Pixel Shape', 'pixelation', 'pixelShape', {
+    'Square': 'square', 'Circle': 'circle', 'Diamond': 'diamond', 'Cross': 'cross', 'Plus': 'plus'
+  });
+  html += devGlitchSelect('Bit Depth', 'pixelation', 'bitDepth', {
+    'None': 'none', '1-bit': '1-bit', '4-bit': '4-bit', '8-bit': '8-bit'
+  });
+  html += devGlitchSelect('Dithering', 'pixelation', 'dithering', {
+    'None': 'none', 'Floyd-Steinberg': 'floyd-steinberg', 'Bayer': 'bayer'
+  });
+  html += devGlitchSelect('Direction', 'pixelation', 'pixelDirection', {
+    'Square': 'square', 'Horizontal': 'horizontal', 'Vertical': 'vertical'
+  });
+
+  // ── CRT ──
+  html += '<div class="dev-subsection">CRT Effect</div>';
+  html += devGlitchCheckbox('Enabled', 'crt', 'enabled');
+  html += devGlitchSelect('Preset', 'crt', 'preset', {
+    'Consumer TV': 'consumer-tv', 'Arcade Monitor': 'arcade-monitor',
+    'Computer Monitor': 'computer-monitor', 'Broadcast Monitor': 'broadcast-monitor'
+  });
+  html += devGlitchRange('Scanline Intensity', 'crt', 'scanlineIntensity', 0, 1, 0.01);
+  html += devGlitchRange('Scanline Thickness', 'crt', 'scanlineThickness', 0.1, 2, 0.01);
+  html += devGlitchRange('Scanline Count', 'crt', 'scanlineCount', 0, 1080, 1);
+  html += devGlitchRange('Brightness', 'crt', 'brightness', 0.5, 5, 0.01);
+  html += devGlitchRange('Phosphor Glow', 'crt', 'phosphorGlow', 0, 2, 0.01);
+  html += devGlitchRange('Curvature', 'crt', 'curvature', 0, 20, 0.1);
+  html += devGlitchRange('Chromatic Aberr.', 'crt', 'chromaticAberration', 0, 0.01, 0.0001);
+  html += devGlitchCheckbox('Flicker \u26A0\uFE0F', 'crt', 'flicker');
+  html += devGlitchRange('Flicker Intensity', 'crt', 'flickerIntensity', 0, 3, 0.01);
+  html += devGlitchCheckbox('Line Movement', 'crt', 'lineMovement');
+  html += devGlitchRange('Line Speed', 'crt', 'lineSpeed', 0, 5, 0.1);
+  html += devGlitchSelect('Line Direction', 'crt', 'lineDirection', {
+    'Up': 'up', 'Down': 'down', 'Left': 'left', 'Right': 'right'
+  });
+
+  // ── Glitch ──
+  html += '<div class="dev-subsection">Glitch Effect</div>';
+  html += devGlitchCheckbox('Enabled', 'glitch', 'enabled');
+  html += devGlitchRange('RGB Shift', 'glitch', 'rgbShift', 0, 0.003, 0.0001);
+  html += devGlitchRange('Digital Noise', 'glitch', 'digitalNoise', 0, 0.5, 0.01);
+  html += devGlitchRange('Line Displacement', 'glitch', 'lineDisplacement', 0, 0.1, 0.001);
+  html += devGlitchRange('Bit Crush Depth', 'glitch', 'bitCrushDepth', 0, 32, 1);
+  html += devGlitchRange('Signal Dropout Freq', 'glitch', 'signalDropoutFreq', 0, 0.2, 0.001);
+  html += devGlitchRange('Signal Dropout Size', 'glitch', 'signalDropoutSize', 0.01, 0.5, 0.01);
+  html += devGlitchRange('Sync Error Freq', 'glitch', 'syncErrorFreq', 0, 0.1, 0.001);
+  html += devGlitchRange('Sync Error Amount', 'glitch', 'syncErrorAmount', 0, 0.2, 0.001);
+  html += devGlitchRange('Interference Speed', 'glitch', 'interferenceSpeed', 0, 5, 0.1);
+  html += devGlitchRange('Interference Intensity', 'glitch', 'interferenceIntensity', 0, 1, 0.01);
+  html += devGlitchRange('Frame Ghost Amount', 'glitch', 'frameGhostAmount', 0, 1, 0.01);
+  html += devGlitchRange('Stutter Freq', 'glitch', 'stutterFreq', 0, 0.5, 0.01);
+  html += devGlitchRange('Datamosh Strength', 'glitch', 'datamoshStrength', 0, 2, 0.01);
+
+  panel.innerHTML = html;
+
+  // ── Bind stage range sliders ──
+  panel.querySelectorAll('input[data-stage]').forEach(function(input) {
+    var stageName = input.getAttribute('data-stage');
+    var key = input.getAttribute('data-key');
+    var valSpan = panel.querySelector('#dev-val-' + stageName + '-' + key);
+    input.addEventListener('input', function() {
+      var v = parseFloat(input.value);
+      STAGE_CONFIG[stageName][key] = v;
+      if (valSpan) valSpan.textContent = v;
+      // Live-update dummy spawner interval if changed during gameplay
+      if ((stageName === 'stage3' || stageName === 'stage2') && key === 'dummySpawnInterval' && state.dummySpawnTimerId) {
+        clearInterval(state.dummySpawnTimerId);
+        state.dummySpawnTimerId = null;
+        startDummySpawner();
+      }
+    });
+  });
+
+  // ── Bind config checkboxes ──
+  var timerBarsCb = document.getElementById('cfg-showTimerBars');
+  if (timerBarsCb) timerBarsCb.addEventListener('change', function() { CONFIG.showTimerBars = timerBarsCb.checked; });
+  var scanlinesCb = document.getElementById('cfg-showScanlines');
+  if (scanlinesCb) scanlinesCb.addEventListener('change', function() {
+    CONFIG.showScanlines = scanlinesCb.checked;
+    document.getElementById('scanlines').style.display = scanlinesCb.checked ? 'block' : 'none';
+  });
+
+  // ── Stage skip buttons ──
+  document.getElementById('dev-stage1-btn').addEventListener('click', function() {
+    clearAllTimers();
+    removeAllWindows();
+    initGame();
+    state.phase = 'playing';
+    $gameArena.classList.remove('hidden');
+    $startScreen.classList.add('hidden');
+    $endScreen.classList.add('hidden');
+    setHorseAnimation('idle', true, null);
+    setTimeout(initGlitchGL, 100);
+    startStage1();
+    state.animFrameId = requestAnimationFrame(gameLoop);
+  });
+
+  document.getElementById('dev-stage2-btn').addEventListener('click', function() {
+    clearAllTimers();
+    removeAllWindows();
+    initGame();
+    state.phase = 'playing';
+    state.currentStage = 2;
+    $gameArena.classList.remove('hidden');
+    $startScreen.classList.add('hidden');
+    $endScreen.classList.add('hidden');
+    setHorseAnimation('idle', true, null);
+    setTimeout(initGlitchGL, 100);
+    startStage2();
+    state.animFrameId = requestAnimationFrame(gameLoop);
+  });
+
+  document.getElementById('dev-stage3-btn').addEventListener('click', function() {
+    clearAllTimers();
+    removeAllWindows();
+    initGame();
+    state.phase = 'playing';
+    state.currentStage = 2;
+    state.stage2Active = true;
+    $gameArena.classList.remove('hidden');
+    $startScreen.classList.add('hidden');
+    $endScreen.classList.add('hidden');
+    setHorseAnimation('idle', true, null);
+    setTimeout(initGlitchGL, 100);
+    // Spawn just the boss window manually
+    var zodiac = ZODIAC_MESSAGES[11]; // Horse is now index 11
+    var w = STAGE_CONFIG.stage2.windowWidth;
+    var h = STAGE_CONFIG.stage2.windowHeight;
+    var pos = positionRandom(w, h);
+    var bossWin = spawnStageWindow({
+      msg: { title: zodiac.title, body: zodiac.body, emoji: zodiac.emoji, type: 'error' },
+      x: pos.x,
+      y: pos.y,
+      width: w,
+      height: h,
+      movement: 'static',
+      timeLimit: null,
+      windowType: 'boss',
+      zodiacIndex: 11,
+    });
+    if (bossWin) {
+      state.bossWindow = bossWin;
+      state.zodiacWindows.push(bossWin);
+      bossWin.element.classList.add('boss-window');
+    }
+    activateBoss();
+    state.animFrameId = requestAnimationFrame(gameLoop);
+  });
+
+  document.getElementById('dev-reset-btn').addEventListener('click', resetGame);
+
+  // ── Bind glitchGL range sliders ──
+  panel.querySelectorAll('input[data-glitch-section]').forEach(function(input) {
+    var section = input.getAttribute('data-glitch-section');
+    var key = input.getAttribute('data-glitch-key');
+    var valSpan = panel.querySelector('#dev-gval-' + section + '-' + key);
+    input.addEventListener('input', function() {
+      var v = parseFloat(input.value);
+      if (section === 'layers') {
+        GLITCH_CONFIG.layers[key] = v;
+        // Update the specific layer's intensity
+        if (key === 'background' && glitchEffects.background) {
+          glitchEffects.background.updateOptions({ intensity: v });
+        } else if (key === 'horse' && glitchEffects.horse) {
+          glitchEffects.horse.updateOptions({ intensity: v });
+        }
+      } else {
+        GLITCH_CONFIG[section][key] = v;
+        // Update all active effects
+        var allEffects = [glitchEffects.background, glitchEffects.horse];
+        allEffects.forEach(function(effect) {
+          if (effect) {
+            var upd = {};
+            upd[key] = v;
+            var opts = { effects: {} };
+            opts.effects[section] = upd;
+            effect.updateOptions(opts);
+          }
+        });
+      }
+      if (valSpan) valSpan.textContent = v;
+    });
+  });
+
+  // ── Bind glitchGL checkboxes ──
+  panel.querySelectorAll('input[data-glitch-cb-section]').forEach(function(input) {
+    var section = input.getAttribute('data-glitch-cb-section');
+    var key = input.getAttribute('data-glitch-cb-key');
+    input.addEventListener('change', function() {
+      var v = input.checked;
+      if (section === 'interaction') {
+        GLITCH_CONFIG.interaction[key] = v;
+        var allEffects = [glitchEffects.background, glitchEffects.horse];
+        allEffects.forEach(function(effect) {
+          if (effect) {
+            var upd = {};
+            upd[key] = v;
+            effect.updateOptions({ interaction: upd });
+          }
+        });
+      } else {
+        GLITCH_CONFIG[section][key] = v;
+        var allEffects = [glitchEffects.background, glitchEffects.horse];
+        allEffects.forEach(function(effect) {
+          if (effect) {
+            var upd = {};
+            upd[key] = v;
+            var opts = { effects: {} };
+            opts.effects[section] = upd;
+            effect.updateOptions(opts);
+          }
+        });
+      }
+    });
+  });
+
+  // ── Bind glitchGL selects ──
+  panel.querySelectorAll('select[data-glitch-sel-section]').forEach(function(sel) {
+    var section = sel.getAttribute('data-glitch-sel-section');
+    var key = sel.getAttribute('data-glitch-sel-key');
+    sel.addEventListener('change', function() {
+      var v = sel.value;
+      if (section === 'interaction') {
+        GLITCH_CONFIG.interaction[key] = v;
+        var allEffects = [glitchEffects.background, glitchEffects.horse];
+        allEffects.forEach(function(effect) {
+          if (effect) {
+            var upd = {};
+            upd[key] = v;
+            if (key === 'shape' && v === 'custom') {
+              upd.customUrl = GLITCH_CONFIG.interaction.customUrl || null;
+            }
+            effect.updateOptions({ interaction: upd });
+          }
+        });
+      } else if (key === 'preset') {
+        GLITCH_CONFIG[section][key] = v;
+        var allEffects = [glitchEffects.background, glitchEffects.horse];
+        allEffects.forEach(function(effect) {
+          if (effect && effect.setCRTPreset) {
+            effect.setCRTPreset(v);
+          }
+        });
+      } else {
+        GLITCH_CONFIG[section][key] = v;
+        var allEffects = [glitchEffects.background, glitchEffects.horse];
+        allEffects.forEach(function(effect) {
+          if (effect) {
+            var upd = {};
+            upd[key] = v;
+            var opts = { effects: {} };
+            opts.effects[section] = upd;
+            effect.updateOptions(opts);
+          }
+        });
+      }
+    });
+  });
+
+  // ── Bind glitchGL text inputs ──
+  panel.querySelectorAll('input[data-glitch-text-section]').forEach(function(input) {
+    var section = input.getAttribute('data-glitch-text-section');
+    var key = input.getAttribute('data-glitch-text-key');
+    input.addEventListener('change', function() {
+      var v = input.value;
+      GLITCH_CONFIG.interaction[key] = v;
+      var allEffects = [glitchEffects.background, glitchEffects.horse];
+      allEffects.forEach(function(effect) {
+        if (effect) {
+          var upd = {};
+          upd[key] = v;
+          effect.updateOptions({ interaction: upd });
+        }
+      });
+    });
+  });
+
+  // ── Bind interaction effect toggles ──
+  panel.querySelectorAll('input[data-glitch-iafx-group]').forEach(function(input) {
+    var group = input.getAttribute('data-glitch-iafx-group');
+    var effect = input.getAttribute('data-glitch-iafx-effect');
+    input.addEventListener('change', function() {
+      var enabled = [];
+      panel.querySelectorAll('input[data-glitch-iafx-group="' + group + '"]').forEach(function(cb) {
+        if (cb.checked) enabled.push(cb.getAttribute('data-glitch-iafx-effect'));
+      });
+      GLITCH_CONFIG.interaction.effects[group] = enabled;
+      var allEffects = [glitchEffects.background, glitchEffects.horse];
+      allEffects.forEach(function(effect) {
+        if (effect) {
+          var efx = {};
+          efx[group] = enabled;
+          effect.updateOptions({ interaction: { effects: efx } });
+        }
+      });
+    });
+  });
+}
+
+function devStageRange(label, stage, key, min, max, step) {
+  var val = STAGE_CONFIG[stage][key];
+  var id = stage + '-' + key;
+  return '<div class="dev-row">' +
+    '<label>' + label + '</label>' +
+    '<input type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" data-stage="' + stage + '" data-key="' + key + '">' +
+    '<span class="val" id="dev-val-' + id + '">' + val + '</span>' +
+  '</div>';
+}
+
+function devCheckbox(label, id, checked) {
+  return '<div class="dev-row">' +
+    '<label>' + label + '</label>' +
+    '<input type="checkbox" id="' + id + '" ' + (checked ? 'checked' : '') + '>' +
+  '</div>';
+}
+
+// ── glitchGL dev helpers ──
+function devGlitchRange(label, section, key, min, max, step) {
+  var val = GLITCH_CONFIG[section][key];
+  var id = section + '-' + key;
+  return '<div class="dev-row">' +
+    '<label>' + label + '</label>' +
+    '<input type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" data-glitch-section="' + section + '" data-glitch-key="' + key + '">' +
+    '<span class="val" id="dev-gval-' + id + '">' + val + '</span>' +
+  '</div>';
+}
+
+function devGlitchCheckbox(label, section, key) {
+  var checked = (section === 'interaction') ? GLITCH_CONFIG.interaction[key] : GLITCH_CONFIG[section][key];
+  return '<div class="dev-row">' +
+    '<label>' + label + '</label>' +
+    '<input type="checkbox" data-glitch-cb-section="' + section + '" data-glitch-cb-key="' + key + '" ' + (checked ? 'checked' : '') + '>' +
+  '</div>';
+}
+
+function devGlitchSelect(label, section, key, options) {
+  var current = (section === 'interaction') ? GLITCH_CONFIG.interaction[key] : GLITCH_CONFIG[section][key];
+  var html = '<div class="dev-row"><label>' + label + '</label><select data-glitch-sel-section="' + section + '" data-glitch-sel-key="' + key + '">';
+  for (var name in options) {
+    var val = options[name];
+    html += '<option value="' + val + '"' + (val === current ? ' selected' : '') + '>' + name + '</option>';
+  }
+  html += '</select></div>';
+  return html;
+}
+
+function devGlitchText(label, section, key) {
+  var val = GLITCH_CONFIG.interaction[key] || '';
+  return '<div class="dev-row">' +
+    '<label>' + label + '</label>' +
+    '<input type="text" value="' + val + '" data-glitch-text-section="' + section + '" data-glitch-text-key="' + key + '">' +
+  '</div>';
+}
+
+function devInteractionToggle(label, group, effect) {
+  var checked = GLITCH_CONFIG.interaction.effects[group] && GLITCH_CONFIG.interaction.effects[group].indexOf(effect) !== -1;
+  return '<div class="dev-row">' +
+    '<label>' + label + '</label>' +
+    '<input type="checkbox" data-glitch-iafx-group="' + group + '" data-glitch-iafx-effect="' + effect + '" ' + (checked ? 'checked' : '') + '>' +
+  '</div>';
+}
+
+// =================================================
+// EVENT LISTENERS
+// =================================================
+// =================================================
+// INTRO SEQUENCE
+// =================================================
+
+// Intro 1: Click anywhere to advance (with double-click guard)
+var intro1Clicked = false;
+$intro1.addEventListener('click', function() {
+  if (!assetsReady || !typewriterFinishedAllPhrases) return;
+  if (intro1Clicked) return;
+  intro1Clicked = true;
+  stopLoadingTypewriter();
+  $intro1.classList.add('hidden');
+  $intro2.classList.remove('hidden');
+  startWindAmbience();
+  $intro2Video.play().catch(function(err) {
+    // If autoplay with audio is blocked, mute and retry
+    console.warn('Audio play blocked, muting:', err);
+    $intro2Video.muted = true;
+    $intro2Video.play();
+  });
+});
+
+// Intro 2: Auto-advance when video finishes
+$intro2Video.addEventListener('ended', function() {
+  $intro2.classList.add('hidden');
+  $intro3.classList.remove('hidden');
+  // Show popup after a short delay (let background loop play)
+  setTimeout(function() {
+    $introPopup.classList.remove('hidden');
+    playAlertSound();
+  }, 500);
+});
+
+// Intro 3: Yay/Neigh → play Intro 4 (with double-click guard)
+var intro3ChoiceMade = false;
+$choiceYay.addEventListener('click', function() {
+  if (intro3ChoiceMade) return;
+  intro3ChoiceMade = true;
+  playIntro4();
+});
+$choiceNeigh.addEventListener('click', function() {
+  if (intro3ChoiceMade) return;
+  intro3ChoiceMade = true;
+  playIntro4();
+});
+
+function playIntro4() {
+  // Hide intro-3 and popup
+  $intro3.classList.add('hidden');
+  $introPopup.classList.add('hidden');
+
+  // Show intro-4 and play the video
+  $intro4.classList.remove('hidden');
+  $intro4Video.currentTime = 0;
+  $intro4Video.play();
+
+  // When intro-4 video ends, crossfade to idle preview
+  $intro4Video.addEventListener('ended', function handler() {
+    $intro4Video.removeEventListener('ended', handler);
+    crossfadeToIdlePreview();
+  });
+}
+
+// Idle preview: starburst fades on horse hover. Cursor pointer on horse always.
+var idlePreviewActive = false;
+var horseCursorActive = false;
+
+function handleHorseHover(e) {
+  var container = document.getElementById('horse-container');
+  var rect = container.getBoundingClientRect();
+  var isOver = (e.clientX >= rect.left && e.clientX <= rect.right &&
+                e.clientY >= rect.top && e.clientY <= rect.bottom);
+
+  // Pointer cursor whenever active
+  if (horseCursorActive) {
+    if (isOver) {
+      $gameArena.classList.add('horse-hover');
+    } else {
+      $gameArena.classList.remove('horse-hover');
+    }
+  }
+
+  // Starburst only during idle preview
+  if (idlePreviewActive) {
+    var starburst = document.getElementById('starburst-video');
+    if (isOver) {
+      starburst.classList.remove('preview-hidden');
+    } else {
+      starburst.classList.add('preview-hidden');
+    }
+  }
+}
+
+function crossfadeToIdlePreview() {
+  var starburstVideo = document.getElementById('starburst-video');
+  var hudEl = document.getElementById('hud');
+
+  // Hide starburst and HUD during preview
+  starburstVideo.classList.add('preview-hidden');
+  hudEl.style.display = 'none';
+
+  // Prepare game arena: visible but transparent
+  $gameArena.classList.remove('hidden');
+  $gameArena.style.opacity = '0';
+  $gameArena.style.transition = 'opacity 1s ease-in-out';
+
+  // Start horse idle animation (but NOT glitchGL)
+  setHorseAnimation('idle', true, null);
+
+  // Start bg video
+  var bgVideo = document.getElementById('glitch-bg');
+  bgVideo.currentTime = 0;
+  bgVideo.play();
+
+  // Trigger crossfade on next frame
+  requestAnimationFrame(function() {
+    // Fade out intro-4
+    $intro4.style.transition = 'opacity 1s ease-in-out';
+    $intro4.style.opacity = '0';
+
+    // Fade in game arena
+    $gameArena.style.opacity = '1';
+
+    // After transition completes, clean up and enable idle hover
+    setTimeout(function() {
+      $intro4.classList.add('hidden');
+      $intro4.style.opacity = '';
+      $intro4.style.transition = '';
+      $gameArena.style.transition = '';
+
+      // Enable hover-to-reveal starburst + cursor
+      idlePreviewActive = true;
+      horseCursorActive = true;
+      document.addEventListener('mousemove', handleHorseHover);
+    }, 1050); // slightly longer than the 1s transition
+  });
+}
+
+// Click on horse during idle preview: start gameplay
+$gameArena.addEventListener('click', function(e) {
+  if (!idlePreviewActive) return;
+  var container = document.getElementById('horse-container');
+  var rect = container.getBoundingClientRect();
+  var isOverHorse = (e.clientX >= rect.left && e.clientX <= rect.right &&
+                     e.clientY >= rect.top && e.clientY <= rect.bottom);
+  if (!isOverHorse) return;
+
+  // Stop starburst hover, keep cursor pointer active
+  idlePreviewActive = false;
+  document.getElementById('starburst-video').classList.remove('preview-hidden');
+  beginGameplay();
+});
+
+// =================================================
+// GAME START/RESTART
+// =================================================
+$startBtn.addEventListener('click', startGame);
+$restartBtn.addEventListener('click', function() {
+  $endScreen.classList.add('hidden');
+  startGame();
+});
+
+$homeBtn.addEventListener('click', function() {
+  resetToIntro();
+});
+
+function resetToIntro() {
+  // Hide all screens
+  $endScreen.classList.add('hidden');
+  $gameArena.classList.add('hidden');
+  $startScreen.classList.add('hidden');
+  $intro2.classList.add('hidden');
+  $intro3.classList.add('hidden');
+  $intro4.classList.add('hidden');
+  $introPopup.classList.add('hidden');
+
+  // Clean up hover state
+  idlePreviewActive = false;
+  horseCursorActive = false;
+  document.removeEventListener('mousemove', handleHorseHover);
+  $gameArena.classList.remove('horse-hover');
+
+  // Reset intro-4 video and transition state
+  $intro4Video.currentTime = 0;
+  $intro4.style.opacity = '';
+  $intro4.style.transition = '';
+
+  // Reset game arena transition state
+  $gameArena.style.opacity = '';
+  $gameArena.style.transition = '';
+
+  // Reset starburst, horse, and HUD visibility (may be hidden after win)
+  document.getElementById('horse-container').style.display = '';
+  document.getElementById('starburst-video').style.display = '';
+  document.getElementById('starburst-video').classList.remove('preview-hidden');
+  document.getElementById('hud').style.display = '';
+
+  // Clean up outro overlay
+  document.getElementById('outro-overlay').classList.add('hidden');
+  if (outroTimerId) { clearInterval(outroTimerId); outroTimerId = null; }
+
+  // Reset double-click guards
+  intro1Clicked = false;
+  intro3ChoiceMade = false;
+
+  // Show intro 1
+  $intro1.classList.remove('hidden');
+  $loadingStarburst.currentTime = 0;
+  $loadingStarburst.play();
+
+  // Assets already loaded from first visit — show "click to begin" immediately
+  if (assetsReady) {
+    stopLoadingTypewriter();
+    typewriterFinishedAllPhrases = true;
+    showClickToBegin();
+  } else {
+    typewriterFinishedAllPhrases = false;
+    startLoadingTypewriter();
+  }
+}
+
+document.addEventListener('mousemove', function(e) {
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+});
+
+// Touch support for boss flee + mouse position tracking
+document.addEventListener('touchmove', function(e) {
+  if (e.touches.length > 0) {
+    lastMouseX = e.touches[0].clientX;
+    lastMouseY = e.touches[0].clientY;
+  }
+}, { passive: true });
+document.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 0) {
+    lastMouseX = e.touches[0].clientX;
+    lastMouseY = e.touches[0].clientY;
+  }
+}, { passive: true });
+
+// =================================================
+// INIT
+// =================================================
+buildDevToolbar();
+</script>
+</body>
+</html>
