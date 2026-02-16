@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Trojan Horse - CNY Minigame</title>
+<title>horsin' around this chinese new year</title>
+<link rel="icon" type="image/x-icon" href="00_assets/horse_head.svg">
 <style>
 @font-face {
   font-family: 'MS Sans Serif';
@@ -278,14 +279,14 @@ body { background: #1a0a2e; color: #fff; }
 #horse-container {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  height: 90vh; width: 90vh; /* explicit width keeps translate(-50%) correct after glitchGL replaces content */
+  height: 90vh; height: 90dvh; width: 90vh; width: 90dvh; /* explicit width keeps translate(-50%) correct after glitchGL replaces content */
   pointer-events: none; z-index: 50;
   mix-blend-mode: darken;
 }
 #starburst-video {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  height: 90vh; width: auto; display: block;
+  height: 90vh; height: 90dvh; width: auto; display: block;
   object-fit: contain;
   mix-blend-mode: screen;
   pointer-events: none;
@@ -757,8 +758,8 @@ body { background: #1a0a2e; color: #fff; }
   .game-window .win-btn { min-height: 36px; min-width: 100px; font-size: 1rem; }
   #start-screen h1 { font-size: 1.6rem; }
   /* Smaller horse on tiny screens */
-  #horse-container { height: 75vh; width: 75vh; }
-  #starburst-video { height: 75vh; }
+  #horse-container { height: 75vh; height: 75dvh; width: 75vh; width: 75dvh; }
+  #starburst-video { height: 75vh; height: 75dvh; }
   /* Window internals for small screens */
   .game-window .body-icon { width: 40px; height: 40px; }
   .game-window .body-text { font-size: 0.75rem; line-height: 14px; }
